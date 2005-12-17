@@ -44,9 +44,8 @@ class FacePart
   
   def toggle()
     pathname = "data/" + type.to_s + "/"
-    files = Dir.new(pathname).to_a[2..-1]
-
-
+    files = Dir.new(pathname).to_a[2..-1].grep(/\.png$/)
+    
     file = File::basename(@filename)
     index = 0
 
@@ -132,6 +131,7 @@ class Face
       :ear     => FacePart.new(root, :ear,     "data/ear/0000.png",     Point.new(90, 0)),
       :nose    => FacePart.new(root, :nose,    "data/nose/0000.png",    Point.new(0, 30)),
       :mouth   => FacePart.new(root, :mouth,   "data/mouth/0000.png",   Point.new(0, 75)),
+      :beard   => FacePart.new(root, :beard,   "data/beard/0000.png",   Point.new(0, 75)),
       :hair    => FacePart.new(root, :hair,    "data/hair/0000.png",    Point.new(0, -20))
     }
   end

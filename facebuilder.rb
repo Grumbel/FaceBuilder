@@ -141,7 +141,7 @@ class FaceBuilder < Gtk::VBox
 
     @face = Face.new(@canvas.root)
 
-    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :nose, :head, :hair]
+    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :beard, :nose, :head, :hair]
     @current_part = 0
 
     @canvas.signal_connect("key-press-event") { |widget, event|
