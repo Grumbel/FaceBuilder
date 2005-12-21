@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require 'gnomecanvas2'
+require "gnomecanvas2"
 require "face.rb"
 
 Point = Struct.new("Point", :x, :y)
@@ -44,6 +44,39 @@ class FaceBuilder < Gtk::VBox
     end
   end
 
+  def setup_controls(root, pos, facepart)
+    left = Gtk::Button.new("<-")
+    Gnome::CanvasWidget.new(root,
+                            {:widget => left,
+                              :x => pos.x,
+                              :y => pos.y,
+                              :width =>  32.0,
+                              :height => 32.0,
+                              :anchor => Gtk::ANCHOR_EAST,
+                              :size_pixels => FALSE})
+    left.show()
+    left.signal_connect("clicked") {
+      @face.get_part(facepart).previous_item()
+      set_current_part(facepart)
+    }
+
+    right = Gtk::Button.new("->")
+    Gnome::CanvasWidget.new(root,
+                            {:widget => right,
+                              :x => pos.x,
+                              :y => pos.y,
+                              :width =>  32.0,
+                              :height => 32.0,
+                              :anchor => Gtk::ANCHOR_WEST,
+                              :size_pixels => FALSE})
+    right.show()
+    right.signal_connect("clicked") {
+      @face.get_part(facepart).next_item()
+      set_current_part(facepart)
+    }
+    return [left, right]
+  end
+
   def setup_menu()
     accel_group = Gtk::AccelGroup.new
     item_factory = Gtk::ItemFactory.new(Gtk::ItemFactory::TYPE_MENU_BAR,
@@ -69,11 +102,38 @@ class FaceBuilder < Gtk::VBox
        ['/File/Save _As...',
         '<Item>', '<control>S', nil, method(:save_file)],
        ['/File/Quit',
-        '<Item>', '<control>Q', nil, method(:quit)]
+        '<Item>', '<control>Q', nil, method(:quit)],
+       ['/Help/About',
+        '<Item>', nil, nil, method(:about_dialog)]
       ]
     item_factory.create_items(menu_items)
     
     return item_factory.get_widget('<main>')
+  end
+
+  def about_dialog(data, widget)
+    Gtk::AboutDialog.set_email_hook {|about, link|
+      p "email_hook"
+      p link
+    }
+    Gtk::AboutDialog.set_url_hook {|about, link|
+      p "url_hook"
+      p link
+    }
+
+    Gtk::AboutDialog.show(nil,
+                          "artists" => ["Ingo Ruhnke <grumbel@gmx.de>"],
+                          "authors" => ["Ingo Ruhnke <grumbel@gmx.de>"],
+                          "comments" => "A simple tool to construct faces",
+                          "copyright" => "Copyright (C) 2005 Ingo Ruhnke <grumbel@gmx.de>",
+                          # "documenters" => ["Documenter 1 <no1@foo.bar.com>", "Documenter 2 <no2@foo.bar.com>"],
+                          "license" => "This program is licenced under the GNU GPL.",
+                          "logo_icon_name" => "gtk-home",
+                          "name" => "Face Builder",
+                          "version" => "0.0.1",
+                          "website" => "http://windstille.berlios.de/facebuilder/",
+                          "website_label" => "Face Builder"
+                          )
   end
   
   def quit(data, widget)
@@ -89,7 +149,7 @@ class FaceBuilder < Gtk::VBox
                                          )
     dialog.run { |response|
       if response == Gtk::Dialog::RESPONSE_ACCEPT then
-        @face = Face.new(@canvas.root, dialog.filename)
+        @face.load(dialog.filename)
       end
       
       dialog.destroy
@@ -109,6 +169,14 @@ class FaceBuilder < Gtk::VBox
       end
       
       dialog.destroy
+    }
+  end
+
+  def set_current_part(type)
+    @parts.each_with_index() { |p, i|
+      if type == p then
+        @current_part = i
+      end
     }
   end
 
@@ -138,10 +206,18 @@ class FaceBuilder < Gtk::VBox
     puts @canvas.modify_bg(Gtk::STATE_NORMAL, Gdk::Color.new(65535, 65535, 65535))
 
     @canvas.root.affine_absolute(Art::Affine.translate(192, 192))
-
     @face = Face.new(@canvas.root)
+    
+    setup_controls(@canvas.root, Point.new(0, -200),  :hat)
+    setup_controls(@canvas.root, Point.new(0, 200),   :head)
+    setup_controls(@canvas.root, Point.new(200, -140), :hair)
 
-    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :beard, :nose, :head, :hair]
+    setup_controls(@canvas.root, Point.new(200, -40), :eyebrow)
+    setup_controls(@canvas.root, Point.new(200, 0),   :eye)
+    setup_controls(@canvas.root, Point.new(200, 40),  :nose)
+    setup_controls(@canvas.root, Point.new(200, 80),  :mouth)
+
+    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :beard, :nose, :head, :hair, :hat]
     @current_part = 0
 
     @canvas.signal_connect("key-press-event") { |widget, event|
@@ -177,7 +253,7 @@ class FaceBuilder < Gtk::VBox
         part.rotation=(part.rotation + 1.0) if part
 
       when Gdk::Keyval::GDK_a
-        part.toggle if part
+        part.next_item if part
         
       when Gdk::Keyval::GDK_Up
         part.offset = Point.new(part.offset.x, part.offset.y - 1) if part
@@ -207,6 +283,7 @@ class FaceBuilder < Gtk::VBox
 
     signal_connect_after('show') {|w,e| }
     signal_connect_after('hide') {|w,e| }
+
     @canvas.show()
     @menu.show()
     @box.show()

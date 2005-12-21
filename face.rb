@@ -1,3 +1,4 @@
+require "rexml/document"
 require 'gnomecanvas2'
 
 class FacePart
@@ -42,7 +43,7 @@ class FacePart
     self.filename=(@filename)
   end
   
-  def toggle()
+  def next_item()
     pathname = "data/" + type.to_s + "/"
     files = Dir.new(pathname).to_a[2..-1].grep(/\.png$/)
     
@@ -59,6 +60,28 @@ class FacePart
     
     if index >= files.length then
       index = 0
+    end
+
+    self.filename=(pathname + files[index])
+  end
+
+  def previous_item()
+    pathname = "data/" + type.to_s + "/"
+    files = Dir.new(pathname).to_a[2..-1].grep(/\.png$/)
+    
+    file = File::basename(@filename)
+    index = 0
+
+    files.each_with_index { |obj, i|
+      if obj == file then
+        index = i
+        break
+      end
+    }
+    index -= 1
+    
+    if index < 0 then
+      index = files.length - 1
     end
 
     self.filename=(pathname + files[index])
@@ -93,7 +116,6 @@ class FacePart
   end
 
   def filename=(filename)
-    puts "Setting: #{filename}"
     @filename = filename    
     pixbuf = Gdk::Pixbuf.new(@filename)
     @canvas_items.each {|item|
@@ -127,12 +149,13 @@ class Face
       :head    => FacePart.new(root, :head,    "data/head/0000.png",    Point.new(0, 0)),
       :eye     => FacePart.new(root, :eye,     "data/eye/0000.png",     Point.new(35, -10)),
       :eyebrow => FacePart.new(root, :eyebrow, "data/eyebrow/0000.png", Point.new(45, -30)),
-      :glasses => FacePart.new(root, :glasses, "data/glasses/0000.png", Point.new(0, -10)),
       :ear     => FacePart.new(root, :ear,     "data/ear/0000.png",     Point.new(90, 0)),
       :nose    => FacePart.new(root, :nose,    "data/nose/0000.png",    Point.new(0, 30)),
       :mouth   => FacePart.new(root, :mouth,   "data/mouth/0000.png",   Point.new(0, 75)),
       :beard   => FacePart.new(root, :beard,   "data/beard/0000.png",   Point.new(0, 75)),
-      :hair    => FacePart.new(root, :hair,    "data/hair/0000.png",    Point.new(0, -20))
+      :glasses => FacePart.new(root, :glasses, "data/glasses/0000.png", Point.new(0, -10)),
+      :hair    => FacePart.new(root, :hair,    "data/hair/0000.png",    Point.new(0, -20)),
+      :hat     => FacePart.new(root,  :hat,    "data/hat/0000.png",    Point.new(0, -50))
     }
   end
 
@@ -153,7 +176,16 @@ class Face
   end
   
   def load(filename)
-    
+    file = File.new( filename )
+    doc = REXML::Document.new(file)
+    doc.elements.each("face/*") { |element|
+      part = element.name.to_sym
+      @parts[part].rotation = element.elements['rotation'].text.to_f
+      @parts[part].scale    = element.elements['scale'].text.to_f
+      @parts[part].filename = element.elements['filename'].text
+      @parts[part].offset   = Point.new(element.elements['offset/x/'].text.to_f, 
+                                        element.elements['offset/y'].text.to_f)
+    }
   end
 end
 
