@@ -1,0 +1,13 @@
+ ,----------------------
+| FaceBuilder ToDo
++--------------
+
+* follow a few more GUI conventions
+* select face part from a list instead of via next/previous toggles
+* add much more face parts
+* adjust all face parts to follow a standard convention (pupils in
+  center of, hair relative to the center of the face, etc) so that
+  they are easier swapable without size and position adjustments
+* support for different sets, male/female, comic, realistic, etc
+
+# EOF #

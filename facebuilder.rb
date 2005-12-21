@@ -92,13 +92,9 @@ class FaceBuilder < Gtk::VBox
     menu_items = 
       [
        ['/_File'],
-       ['/File/tearoff1', '<Tearoff>', nil, nil, ifactory_cb],
-       ['/File/_New',
-        '<Item>', '<control>N', nil, ifactory_cb],
+#       ['/File/tearoff1', '<Tearoff>', nil, nil, ifactory_cb],
        ['/File/_Open',
         '<Item>', '<control>O', nil, method(:open_file)],
-       ['/File/_Save',
-        '<Item>', '<control>S', nil, method(:save_file)],
        ['/File/Save _As...',
         '<Item>', '<control>S', nil, method(:save_file)],
        ['/File/Quit',
@@ -112,14 +108,14 @@ class FaceBuilder < Gtk::VBox
   end
 
   def about_dialog(data, widget)
-    Gtk::AboutDialog.set_email_hook {|about, link|
-      p "email_hook"
-      p link
-    }
-    Gtk::AboutDialog.set_url_hook {|about, link|
-      p "url_hook"
-      p link
-    }
+#     Gtk::AboutDialog.set_email_hook {|about, link|
+#       p "email_hook"
+#       p link
+#     }
+#     Gtk::AboutDialog.set_url_hook {|about, link|
+#       p "url_hook"
+#       p link
+#     }
 
     Gtk::AboutDialog.show(nil,
                           "artists" => ["Ingo Ruhnke <grumbel@gmx.de>"],
@@ -127,7 +123,7 @@ class FaceBuilder < Gtk::VBox
                           "comments" => "A simple tool to construct faces",
                           "copyright" => "Copyright (C) 2005 Ingo Ruhnke <grumbel@gmx.de>",
                           # "documenters" => ["Documenter 1 <no1@foo.bar.com>", "Documenter 2 <no2@foo.bar.com>"],
-                          "license" => "This program is licenced under the GNU GPL.",
+                          "license" => File.new("COPYING").read(),
                           "logo_icon_name" => "gtk-home",
                           "name" => "Face Builder",
                           "version" => "0.0.1",
@@ -203,7 +199,8 @@ class FaceBuilder < Gtk::VBox
       # puts "Bla: ", @canvas.get_item_at(event.x, event.y)
     }
 
-    puts @canvas.modify_bg(Gtk::STATE_NORMAL, Gdk::Color.new(65535, 65535, 65535))
+    # puts
+    @canvas.modify_bg(Gtk::STATE_NORMAL, Gdk::Color.new(65535, 65535, 65535))
 
     @canvas.root.affine_absolute(Art::Affine.translate(192, 192))
     @face = Face.new(@canvas.root)
@@ -211,6 +208,8 @@ class FaceBuilder < Gtk::VBox
     setup_controls(@canvas.root, Point.new(0, -200),  :hat)
     setup_controls(@canvas.root, Point.new(0, 200),   :head)
     setup_controls(@canvas.root, Point.new(200, -140), :hair)
+
+    setup_controls(@canvas.root, Point.new(-200, 0), :glasses)
 
     setup_controls(@canvas.root, Point.new(200, -40), :eyebrow)
     setup_controls(@canvas.root, Point.new(200, 0),   :eye)
@@ -240,16 +239,16 @@ class FaceBuilder < Gtk::VBox
       when Gdk::Keyval::GDK_r
         @face.reload()
 
-      when Gdk::Keyval::GDK_p
+      when Gdk::Keyval::GDK_Page_Down
         part.scale=(part.scale / 1.02) if part
 
-      when Gdk::Keyval::GDK_u
+      when Gdk::Keyval::GDK_Page_Up
         part.scale=(part.scale * 1.02) if part
 
-      when Gdk::Keyval::GDK_y
+      when Gdk::Keyval::GDK_End
         part.rotation=(part.rotation - 1.0) if part
 
-      when Gdk::Keyval::GDK_i
+      when Gdk::Keyval::GDK_Home
         part.rotation=(part.rotation + 1.0) if part
 
       when Gdk::Keyval::GDK_a
