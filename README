@@ -14,7 +14,7 @@ Running
 You need Ruby and the Ruby bindings for Gtk and GnomeCanvas. Once you
 have those just run:
 
- ./facebuilder.rb
+ ruby ./facebuilder.rb
 
 
 Controls
