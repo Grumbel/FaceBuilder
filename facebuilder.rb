@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "gnomecanvas2"
+require "gtk2"
 require "face.rb"
 
 Point = Struct.new("Point", :x, :y)
@@ -172,20 +173,36 @@ class FaceBuilder < Gtk::VBox
   def set_current_part(type)
     @parts.each_with_index() { |p, i|
       if type == p then
-        @current_part = i
+        if @current_part != i
+          @treeview.columns[0].title = type.to_s.capitalize
+                                                          
+          @list.clear()
+          Dir.new("data/#{type}/").grep(/\.png$/).each{|v|
+            iter = @list.append()
+            pixbuf = Gdk::Pixbuf.new("data/#{type}/#{v}")
+            # Add keep of aspect ratio
+            iter[0] = pixbuf.scale(64, 64)
+          }
+
+          @current_part = i
+        end       
       end
     }
+
+    
   end
 
   def initialize(window)
     super()
 
     @window = window
-
+    
     @box = Gtk::EventBox.new
     @menu = setup_menu()
     pack_start(@menu, false, false, 0)
-    pack_start(@box)
+    @hbox = Gtk::HBox.new()
+    pack_start(@hbox)
+    @hbox.pack_start(@box)
 
     @label = Gtk::Label.new
     @label.show
@@ -193,8 +210,25 @@ class FaceBuilder < Gtk::VBox
     set_border_width(@pad = 2)
     set_size_request((@width = 48)+(@pad*2), (@height = 48)+(@pad*2))
     @canvas = Gnome::Canvas.new(true)
+    @box.border_width = 5
     @box.add(@canvas)
     
+    @list = Gtk::ListStore.new(Gdk::Pixbuf)
+    
+    [Gdk::Pixbuf.new("data/eye/0012.png"), 
+     Gdk::Pixbuf.new("data/eye/0010.png")].each {|v|
+      iter = @list.append()
+      iter[0] = v.scale(64, 64)
+      # puts iter
+    }
+
+    @treeview = Gtk::TreeView.new(@list)
+    @treeview.append_column(Gtk::TreeViewColumn.new("Pictures",
+                                                    Gtk::CellRendererPixbuf.new, {:pixbuf => 0}))
+    @treeview.selection.set_mode(Gtk::SELECTION_SINGLE)
+    # scrolled_win.add_with_viewport(treeview)
+
+    @hbox.pack_start(@treeview, false)
     @canvas.signal_connect("button-press-event") { |item,event|
       # Some throuble with alpha
       # puts "Bla: ", @canvas.get_item_at(event.x, event.y)
@@ -236,6 +270,9 @@ class FaceBuilder < Gtk::VBox
     @canvas.signal_connect("key-press-event") { |widget, event|
       part = @face.get_part(@parts[@current_part])
       case event.keyval
+      when Gdk::Keyval::GDK_c
+        part.offset = Point.new(0, part.offset.y) if part
+
       when Gdk::Keyval::GDK_e
         @current_part -= 1
         if @current_part < 0 then
@@ -298,8 +335,10 @@ class FaceBuilder < Gtk::VBox
     signal_connect_after('hide') {|w,e| }
 
     @canvas.show()
+    @treeview.show()
     @menu.show()
     @box.show()
+    @hbox.show()
     show()
   end
 end
@@ -314,7 +353,7 @@ if $0 == __FILE__
       signal_connect("delete_event") { |i,a| Gtk::main_quit }
       $facebuilder = FaceBuilder.new(self)
       add($facebuilder)
-      set_default_size(512, 512)
+      set_default_size(640, 512)
       # set_resizable(false)
       show()
     end

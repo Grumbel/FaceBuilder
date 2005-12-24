@@ -1,0 +1,30 @@
+body {
+  margin-left:  5em;
+  margin-right: 5em;
+ margin: 1em 5em 3em 5em;
+  background-color: rgb(100, 150, 200);
+}
+
+div.body {
+  background-color: white;
+  padding: 0.5em 1em 2em 1em;
+  margin-bottom: 1em;
+  border-color: rgb(120, 180, 220);
+  border-style: solid;
+  border-width: 0.5em;
+}
+
+div.copyright {
+  text-align: right;
+  padding: 0.5em 1em 0.5em 1em;
+  background-color: white;
+  border-width: 0.5em;
+  border-style: solid;
+  border-color: rgb(120, 180, 220);
+}
+
+h1 {
+  text-align: center;
+}
+
+/* EOF */

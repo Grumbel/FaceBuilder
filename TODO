@@ -9,5 +9,6 @@
   center of, hair relative to the center of the face, etc) so that
   they are easier swapable without size and position adjustments
 * support for different sets, male/female, comic, realistic, etc
+* create a context-menu to center-x, center-y and similar stuff
 
 # EOF #

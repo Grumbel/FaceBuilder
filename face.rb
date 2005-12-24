@@ -29,8 +29,14 @@ class FacePart
       item_x, item_y = item.parent.w2i(event.x, event.y)
       if @dragging && (event.state & Gdk::Window::BUTTON1_MASK == Gdk::Window::BUTTON1_MASK)
         # Calculate the new position
-        @offset.x = @old_offset.x + item_x - @x
+
+        if event.state & Gdk::Window::SHIFT_MASK == Gdk::Window::SHIFT_MASK
+          @offset.x = @old_offset.x
+        else
+          @offset.x = @old_offset.x + item_x - @x
+        end
         @offset.y = @old_offset.y + item_y - @y       
+
         update_items()
       end
 
