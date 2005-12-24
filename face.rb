@@ -4,6 +4,42 @@ require 'gnomecanvas2'
 class FacePart
   attr_reader :type, :offset, :filename, :canvas_items, :scale, :rotation
   
+  def item_event(item, event)
+    case event.event_type
+    when Gdk::Event::BUTTON_PRESS
+      case event.button
+      when 1
+        # Record the click position in item-space
+        @x, @y = item.parent.w2i(event.x, event.y)
+
+        # Record the item position before the drag
+        @old_offset = @offset.clone()
+
+        fleur = Gdk::Cursor.new(Gdk::Cursor::FLEUR)
+        item.grab(Gdk::Event::POINTER_MOTION_MASK | Gdk::Event::BUTTON_RELEASE_MASK,
+                  fleur,
+                  event.time)
+        
+        @dragging = true
+
+        $facebuilder.set_current_part(@type)
+      end
+
+    when Gdk::Event::MOTION_NOTIFY
+      item_x, item_y = item.parent.w2i(event.x, event.y)
+      if @dragging && (event.state & Gdk::Window::BUTTON1_MASK == Gdk::Window::BUTTON1_MASK)
+        # Calculate the new position
+        @offset.x = @old_offset.x + item_x - @x
+        @offset.y = @old_offset.y + item_y - @y       
+        update_items()
+      end
+
+    when Gdk::Event::BUTTON_RELEASE
+      item.ungrab(event.time)
+      @dragging = false;
+    end
+  end
+
   def initialize(root, type, filename, offset)
     @type     = type
     @offset   = offset
@@ -26,8 +62,12 @@ class FacePart
                                              :height => im.height,
                                              :anchor => Gtk::ANCHOR_CENTER)
 
+    @canvas_items.last.signal_connect("event") { |item, event|
+      item_event(item, event)
+    }
+
     case @type
-    when :eye, :ear, :eyebrow
+    when :eye, :ear, :eyebrow, :mouthfold
       @canvas_items << Gnome::CanvasPixbuf.new(root,
                                                :pixbuf => im,
                                                :x => 0, # offset.x,
@@ -147,11 +187,13 @@ class Face
     @root = root
     @parts  = {
       :head    => FacePart.new(root, :head,    "data/head/0000.png",    Point.new(0, 0)),
+      :forehead    => FacePart.new(root, :forehead,    "data/forehead/0000.png",    Point.new(0, -75)),
       :eye     => FacePart.new(root, :eye,     "data/eye/0000.png",     Point.new(35, -10)),
       :eyebrow => FacePart.new(root, :eyebrow, "data/eyebrow/0000.png", Point.new(45, -30)),
       :ear     => FacePart.new(root, :ear,     "data/ear/0000.png",     Point.new(90, 0)),
       :nose    => FacePart.new(root, :nose,    "data/nose/0000.png",    Point.new(0, 30)),
       :mouth   => FacePart.new(root, :mouth,   "data/mouth/0000.png",   Point.new(0, 75)),
+      :mouthfold => FacePart.new(root, :mouthfold,   "data/mouthfold/0000.png",   Point.new(40, 75)),
       :beard   => FacePart.new(root, :beard,   "data/beard/0000.png",   Point.new(0, 75)),
       :glasses => FacePart.new(root, :glasses, "data/glasses/0000.png", Point.new(0, -10)),
       :hair    => FacePart.new(root, :hair,    "data/hair/0000.png",    Point.new(0, -20)),

@@ -118,8 +118,8 @@ class FaceBuilder < Gtk::VBox
 #     }
 
     Gtk::AboutDialog.show(nil,
-                          "artists" => ["Ingo Ruhnke <grumbel@gmx.de>"],
-                          "authors" => ["Ingo Ruhnke <grumbel@gmx.de>"],
+                          # "artists" => File.new("AUTHORS").readlines(),
+                          "authors" => File.new("AUTHORS").readlines(),
                           "comments" => "A simple tool to construct faces",
                           "copyright" => "Copyright (C) 2005 Ingo Ruhnke <grumbel@gmx.de>",
                           # "documenters" => ["Documenter 1 <no1@foo.bar.com>", "Documenter 2 <no2@foo.bar.com>"],
@@ -207,6 +207,7 @@ class FaceBuilder < Gtk::VBox
     @face = Face.new(@canvas.root)
     
     setup_controls(@canvas.root, Point.new(0, -200),  :hat)
+    setup_controls(@canvas.root, Point.new(-200, -140),   :forehead)
     setup_controls(@canvas.root, Point.new(0, 200),   :head)
     setup_controls(@canvas.root, Point.new(200, -140), :hair)
 
@@ -216,8 +217,20 @@ class FaceBuilder < Gtk::VBox
     setup_controls(@canvas.root, Point.new(200, 0),   :eye)
     setup_controls(@canvas.root, Point.new(200, 40),  :nose)
     setup_controls(@canvas.root, Point.new(200, 80),  :mouth)
+    setup_controls(@canvas.root, Point.new(-200, 80),  :mouthfold)
 
-    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :beard, :nose, :head, :hair, :hat]
+    Gnome::CanvasText.new(@canvas.root,
+                          {:text => 
+                            "PgUp, PgDown:\tscale\n" +
+                            "Home, End:\t\trotate\n" +
+                            "Cursorkeys:\t\tmove\n",
+                            :x => -180,
+                            :y => 180,
+                            :font => "Sans 10",
+                            :anchor => Gtk::ANCHOR_N,
+                            :fill_color => "black"})
+
+    @parts = [:eye, :eyebrow, :glasses, :ear, :mouth, :mouthfold, :beard, :nose, :head, :forehead, :hair, :hat]
     @current_part = 0
 
     @canvas.signal_connect("key-press-event") { |widget, event|
@@ -299,7 +312,8 @@ if $0 == __FILE__
       super()
       set_title("Face Builder")
       signal_connect("delete_event") { |i,a| Gtk::main_quit }
-      add(FaceBuilder.new(self))
+      $facebuilder = FaceBuilder.new(self)
+      add($facebuilder)
       set_default_size(512, 512)
       # set_resizable(false)
       show()
