@@ -178,10 +178,23 @@ class FaceBuilder < Gtk::VBox
                                                           
           @list.clear()
           Dir.new("data/#{type}/").grep(/\.png$/).each{|v|
+            filename = "data/#{type}/#{v}"
             iter = @list.append()
-            pixbuf = Gdk::Pixbuf.new("data/#{type}/#{v}")
+            pixbuf = Gdk::Pixbuf.new(filename)
+
+            # scale, while keeping aspect
+            if pixbuf.width > 64 or pixbuf.height > 64 then # need scaling, since larger then 64x64
+              aspect = pixbuf.width.to_f / pixbuf.height
+              if pixbuf.width > pixbuf.height then
+                pixbuf = pixbuf.scale(64, 64 / aspect)
+              else
+                pixbuf = pixbuf.scale(64 * aspect, 64)
+              end
+            end
+
             # Add keep of aspect ratio
-            iter[0] = pixbuf.scale(64, 64)
+            iter[0] = pixbuf
+            iter[1] = filename
           }
 
           @current_part = i
@@ -200,7 +213,7 @@ class FaceBuilder < Gtk::VBox
     @box = Gtk::EventBox.new
     @menu = setup_menu()
     pack_start(@menu, false, false, 0)
-    @hbox = Gtk::HBox.new()
+    @hbox = Gtk::HBox.new(false, 5)
     pack_start(@hbox)
     @hbox.pack_start(@box)
 
@@ -210,25 +223,45 @@ class FaceBuilder < Gtk::VBox
     set_border_width(@pad = 2)
     set_size_request((@width = 48)+(@pad*2), (@height = 48)+(@pad*2))
     @canvas = Gnome::Canvas.new(true)
-    @box.border_width = 5
+    # @box.border_width = 5
     @box.add(@canvas)
     
-    @list = Gtk::ListStore.new(Gdk::Pixbuf)
+    @list = Gtk::ListStore.new(Gdk::Pixbuf, String)
     
     [Gdk::Pixbuf.new("data/eye/0012.png"), 
      Gdk::Pixbuf.new("data/eye/0010.png")].each {|v|
       iter = @list.append()
+      puts "iter: #{iter.inspect}"
       iter[0] = v.scale(64, 64)
+      iter[1] = ""
       # puts iter
     }
 
+    @scrolled_win = Gtk::ScrolledWindow.new
+    @scrolled_win.set_policy(Gtk::POLICY_AUTOMATIC,Gtk::POLICY_AUTOMATIC)
+    # @scrolled_win.width = 64
+
     @treeview = Gtk::TreeView.new(@list)
-    @treeview.append_column(Gtk::TreeViewColumn.new("Pictures",
-                                                    Gtk::CellRendererPixbuf.new, {:pixbuf => 0}))
+    @treeview.headers_visible = false
+    @treeview.append_column(Gtk::TreeViewColumn.new("Stuff",
+                                                    Gtk::CellRendererPixbuf.new, 
+                                                    {:pixbuf => 0}))
     @treeview.selection.set_mode(Gtk::SELECTION_SINGLE)
     # scrolled_win.add_with_viewport(treeview)
+    
+    @treeview.signal_connect("cursor-changed") { |treeview|
+      row, column = treeview.cursor()
+      puts @list.methods()
 
-    @hbox.pack_start(@treeview, false)
+      puts "Selected something #{@list.get_value(@list.get_iter(row), 1)}"
+      filename = @list.get_value(@list.get_iter(row), 1)
+      @face.get_part(@parts[@current_part]).filename = filename
+    }
+    
+    @scrolled_win.set_size_request(96,64)
+    @hbox.pack_end(@scrolled_win, false, false, 0)
+    @scrolled_win.add_with_viewport(@treeview)
+
     @canvas.signal_connect("button-press-event") { |item,event|
       # Some throuble with alpha
       # puts "Bla: ", @canvas.get_item_at(event.x, event.y)
@@ -335,6 +368,7 @@ class FaceBuilder < Gtk::VBox
     signal_connect_after('hide') {|w,e| }
 
     @canvas.show()
+    @scrolled_win.show()
     @treeview.show()
     @menu.show()
     @box.show()
