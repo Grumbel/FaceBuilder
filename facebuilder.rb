@@ -100,6 +100,8 @@ class FaceBuilder < Gtk::VBox
         '<Item>', '<control>S', nil, method(:save_file)],
        ['/File/Quit',
         '<Item>', '<control>Q', nil, method(:quit)],
+       ['/View/Hide Controls', 
+        '<Item>', nil, nil, nil],
        ['/Help/About',
         '<Item>', nil, nil, method(:about_dialog)]
       ]
