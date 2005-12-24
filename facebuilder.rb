@@ -228,15 +228,6 @@ class FaceBuilder < Gtk::VBox
     
     @list = Gtk::ListStore.new(Gdk::Pixbuf, String)
     
-    [Gdk::Pixbuf.new("data/eye/0012.png"), 
-     Gdk::Pixbuf.new("data/eye/0010.png")].each {|v|
-      iter = @list.append()
-      puts "iter: #{iter.inspect}"
-      iter[0] = v.scale(64, 64)
-      iter[1] = ""
-      # puts iter
-    }
-
     @scrolled_win = Gtk::ScrolledWindow.new
     @scrolled_win.set_policy(Gtk::POLICY_AUTOMATIC,Gtk::POLICY_AUTOMATIC)
     # @scrolled_win.width = 64
