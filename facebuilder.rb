@@ -31,20 +31,21 @@ class FacebuilderGlade
                Gnome::UIInfo::menu_preferences_item(callback_dummy, nil),
                Gnome::UIInfo::menu_about_item(callback_dummy, nil),
               ]
-    uiinfos[0][9] = @glade['new1']
-    uiinfos[1][9] = @glade['open1']
-    uiinfos[2][9] = @glade['save1']
-    uiinfos[3][9] = @glade['save_as1']
-    uiinfos[4][9] = @glade['quit1']
-    uiinfos[5][9] = @glade['cut1']
-    uiinfos[6][9] = @glade['copy1']
-    uiinfos[7][9] = @glade['paste1']
-    uiinfos[8][9] = @glade['clear1']
-    uiinfos[9][9] = @glade['properties1']
+    uiinfos[0][9]  = @glade['new1']
+    uiinfos[1][9]  = @glade['open1']
+    uiinfos[2][9]  = @glade['save1']
+    uiinfos[3][9]  = @glade['save_as1']
+    uiinfos[4][9]  = @glade['quit1']
+    uiinfos[5][9]  = @glade['cut1']
+    uiinfos[6][9]  = @glade['copy1']
+    uiinfos[7][9]  = @glade['paste1']
+    uiinfos[8][9]  = @glade['clear1']
+    uiinfos[9][9]  = @glade['properties1']
     uiinfos[10][9] = @glade['preferences1']
     uiinfos[11][9] = @glade['about1']
     app.install_menu_hints(uiinfos)
   end
+
   # Creates tooltips.
   def create_tooltips
     @tooltip = Gtk::Tooltips.new
@@ -52,9 +53,13 @@ class FacebuilderGlade
     @glade['toolbutton_open_file'].set_tooltip(@tooltip, _('Open File'))
     @glade['toolbutton_save_file'].set_tooltip(@tooltip, _('Save File'))
 
+    @glade['toolbutton_undo'].signal_connect("clicked") { |*params| self.on_undo() }
+    @glade['toolbutton_redo'].signal_connect("clicked") { |*params| self.on_redo() }
+
     @glade['toolbutton_open_file'].signal_connect("clicked") { |*params| on_open1_activate(nil) }
     @glade['toolbutton_save_file'].signal_connect("clicked") { |*params| on_save_as1_activate(nil) }
   end
+
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
     bindtextdomain(domain, localedir, nil, "UTF-8")
     @glade = GladeXML.new(path_or_data, root, domain, localedir, flag) {|handler| method(handler)}
@@ -152,6 +157,14 @@ class FacebuilderGlade
         part.offset = Point.new(part.offset.x + 1, part.offset.y) if part
       end
     }
+  end
+
+  def on_undo()
+    @face.do_undo()
+  end
+
+  def on_redo()
+    @face.do_redo()
   end
   
   def on_open1_activate(widget)
@@ -346,6 +359,11 @@ class FacebuilderGlade
       end
     }   
   end
+
+  def update_undo()
+    @glade['toolbutton_undo'].set_sensitive(@face.has_undo_stack?)
+    @glade['toolbutton_redo'].set_sensitive(@face.has_redo_stack?)
+  end
 end
 
 # Main program
@@ -360,3 +378,5 @@ if __FILE__ == $0
   $facebuilder = FacebuilderGlade.new(PROG_PATH, nil, PROG_NAME)
   Gtk.main
 end
+
+# EOF #

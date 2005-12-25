@@ -1,6 +1,21 @@
 require "rexml/document"
 require 'gnomecanvas2'
 
+class FaceCommand
+  def initialize(undo_, redo_)
+    @undo = undo_
+    @redo = redo_    
+  end
+
+  def do_undo()
+    @undo.call()
+  end
+  
+  def do_redo()
+    @redo.call()
+  end
+end
+
 class FacePart
   attr_reader :type, :offset, :filename, :canvas_items, :scale, :rotation
   
@@ -43,10 +58,19 @@ class FacePart
     when Gdk::Event::BUTTON_RELEASE
       item.ungrab(event.time)
       @dragging = false;
+
+      if @old_offset != @offset then
+        old_offset = @old_offset.clone()
+        offset     = @offset.clone()
+
+        @parent.undo_stack << FaceCommand.new(proc{ @parent.get_part(@type).offset = old_offset },
+                                              proc{ @parent.get_part(@type).offset = offset     })
+      end
     end
   end
 
-  def initialize(root, type, filename, offset)
+  def initialize(parent, root, type, filename, offset)
+    @parent = parent
     @type     = type
     @offset   = offset
     @filename = filename
@@ -134,6 +158,8 @@ class FacePart
   end
 
   def update_items()
+    $facebuilder.update_undo() if $facebuilder
+
     if @canvas_items.length == 1 then
       @canvas_items[0].affine_absolute(Art::Affine.translate(@offset.x, @offset.y) *
                                        Art::Affine.rotate(@rotation) *
@@ -189,21 +215,26 @@ class FacePart
 end
 
 class Face
+  attr_accessor :undo_stack, :redo_stack, :parts
+
   def initialize(root, filename = nil)
+    @undo_stack = []
+    @redo_stack = []
+
     @root = root
     @parts  = {
-      :head    => FacePart.new(root, :head,    "data/head/0000.png",    Point.new(0, 0)),
-      :forehead    => FacePart.new(root, :forehead,    "data/forehead/0000.png",    Point.new(0, -75)),
-      :eye     => FacePart.new(root, :eye,     "data/eye/0000.png",     Point.new(35, -10)),
-      :eyebrow => FacePart.new(root, :eyebrow, "data/eyebrow/0000.png", Point.new(45, -30)),
-      :ear     => FacePart.new(root, :ear,     "data/ear/0000.png",     Point.new(90, 0)),
-      :nose    => FacePart.new(root, :nose,    "data/nose/0000.png",    Point.new(0, 30)),
-      :mouth   => FacePart.new(root, :mouth,   "data/mouth/0000.png",   Point.new(0, 75)),
-      :mouthfold => FacePart.new(root, :mouthfold,   "data/mouthfold/0000.png",   Point.new(40, 75)),
-      :beard   => FacePart.new(root, :beard,   "data/beard/0000.png",   Point.new(0, 75)),
-      :glasses => FacePart.new(root, :glasses, "data/glasses/0000.png", Point.new(0, -10)),
-      :hair    => FacePart.new(root, :hair,    "data/hair/0000.png",    Point.new(0, -20)),
-      :hat     => FacePart.new(root,  :hat,    "data/hat/0000.png",    Point.new(0, -50))
+      :head      => FacePart.new(self, root, :head,      "data/head/0000.png",      Point.new( 0,   0)),
+      :forehead  => FacePart.new(self, root, :forehead,  "data/forehead/0000.png",  Point.new( 0, -75)),
+      :eye       => FacePart.new(self, root, :eye,       "data/eye/0000.png",       Point.new(35, -10)),
+      :eyebrow   => FacePart.new(self, root, :eyebrow,   "data/eyebrow/0000.png",   Point.new(45, -30)),
+      :ear       => FacePart.new(self, root, :ear,       "data/ear/0000.png",       Point.new(90,   0)),
+      :nose      => FacePart.new(self, root, :nose,      "data/nose/0000.png",      Point.new( 0,  30)),
+      :mouth     => FacePart.new(self, root, :mouth,     "data/mouth/0000.png",     Point.new( 0,  75)),
+      :mouthfold => FacePart.new(self, root, :mouthfold, "data/mouthfold/0000.png", Point.new(40,  75)),
+      :beard     => FacePart.new(self, root, :beard,     "data/beard/0000.png",     Point.new( 0,  75)),
+      :glasses   => FacePart.new(self, root, :glasses,   "data/glasses/0000.png",   Point.new( 0, -10)),
+      :hair      => FacePart.new(self, root, :hair,      "data/hair/0000.png",      Point.new( 0, -20)),
+      :hat       => FacePart.new(self, root, :hat,       "data/hat/0000.png",       Point.new( 0, -50))
     }
   end
 
@@ -234,6 +265,34 @@ class Face
       @parts[part].offset   = Point.new(element.elements['offset/x/'].text.to_f, 
                                         element.elements['offset/y'].text.to_f)
     }
+  end
+
+  def do_undo()
+    if ! @undo_stack.empty? then
+      cmd = @undo_stack.pop
+      cmd.do_undo()
+      @redo_stack << cmd
+    end
+  end
+
+  def do_redo()
+    if ! @redo_stack.empty? then
+      cmd = @redo_stack.pop
+      cmd.do_redo()
+      @undo_stack << cmd
+    end    
+  end
+
+  def has_undo_stack?()
+    return ! @undo_stack.empty?
+  end
+
+  def has_redo_stack?()
+    return ! @redo_stack.empty?
+  end
+
+  def on_change()
+    
   end
 end
 
