@@ -18,19 +18,19 @@ class FacebuilderGlade
     tips = @glade.get_tooltips(app.toplevel)
     callback_dummy = Proc.new{} #Dummy 
     uiinfos = [
-      Gnome::UIInfo::menu_new_item('_New', nil, callback_dummy, nil),
-      Gnome::UIInfo::menu_open_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_save_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_save_as_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_quit_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_cut_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_copy_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_paste_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_clear_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_properties_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_preferences_item(callback_dummy, nil),
-      Gnome::UIInfo::menu_about_item(callback_dummy, nil),
-    ]
+               Gnome::UIInfo::menu_new_item('_New', nil, callback_dummy, nil),
+               Gnome::UIInfo::menu_open_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_save_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_save_as_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_quit_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_cut_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_copy_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_paste_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_clear_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_properties_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_preferences_item(callback_dummy, nil),
+               Gnome::UIInfo::menu_about_item(callback_dummy, nil),
+              ]
     uiinfos[0][9] = @glade['new1']
     uiinfos[1][9] = @glade['open1']
     uiinfos[2][9] = @glade['save1']
@@ -77,9 +77,9 @@ class FacebuilderGlade
     setup_controls(@canvas.root, Point.new(-200, -140),   :forehead)
     setup_controls(@canvas.root, Point.new(0, 200),   :head)
     setup_controls(@canvas.root, Point.new(200, -140), :hair)
-
+    
     setup_controls(@canvas.root, Point.new(-200, 0), :glasses)
-
+    
     setup_controls(@canvas.root, Point.new(200, -40), :eyebrow)
     setup_controls(@canvas.root, Point.new(200, 0),   :eye)
     setup_controls(@canvas.root, Point.new(200, 40),  :nose)
@@ -96,6 +96,10 @@ class FacebuilderGlade
                             :font => "Sans 10",
                             :anchor => Gtk::ANCHOR_N,
                             :fill_color => "black"})
+
+    @canvas.signal_connect_after("button-press-event") { |widget, event|
+      widget.grab_focus()
+    }
 
     @canvas.signal_connect("key-press-event") { |widget, event|
       part = @face.get_part(@parts[@current_part])
@@ -151,7 +155,7 @@ class FacebuilderGlade
   end
   
   def on_open1_activate(widget)
-        dialog =  Gtk::FileChooserDialog.new("Gtk::FileChooser sample", nil,
+    dialog =  Gtk::FileChooserDialog.new("Gtk::FileChooser sample", nil,
                                          Gtk::FileChooser::ACTION_OPEN,
                                          "gnome-vfs",
                                          [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
@@ -259,40 +263,61 @@ class FacebuilderGlade
 
   def setup_faceparts()
     @treeview = @glade['FaceParts']
-    @list = Gtk::ListStore.new(Gdk::Pixbuf, String)
+    @list = Gtk::ListStore.new(String, Gdk::Pixbuf)
     @treeview.model = @list
-    @treeview.append_column(Gtk::TreeViewColumn.new("Stuff",
-                                                    Gtk::CellRendererPixbuf.new, 
-                                                    {:pixbuf => 0}))    
-    
-    @treeview.signal_connect("cursor-changed") { |treeview|
-      row, column = treeview.cursor()
-      puts @list.methods()
+    @treeview.set_property('selection-mode', Gtk::SELECTION_BROWSE)
 
-      puts "Selected something #{@list.get_value(@list.get_iter(row), 1)}"
-      filename = @list.get_value(@list.get_iter(row), 1)
-      @face.get_part(@parts[@current_part]).filename = filename
+    @treeview.signal_connect("selection-changed") { |iconview|
+      row = iconview.selected_items()[0]
+      if row then # when does this get nil?
+        filename = iconview.model.get_value(@list.get_iter(row), 0)
+        # puts filename.inspect
+        @face.get_part(@parts[@current_part]).filename = filename
+        # puts "Selected something #{iconview.model.get_value(@list.get_iter(row), 1)}"
+      end
     }
+
+    @treeview.text_column   = -1
+    @treeview.pixbuf_column = 1
   end
 
   def setup_partselector()
-    list = Gtk::ListStore.new(String)
     partselector = @glade['PartSelector']
-    partselector.model = list
+
+    #partselector.model = Gtk::ListStore.new(String)
     
-    @parts.each {|part|
-      iter = list.append()
-      iter[0] = part.to_s
+    model = Gtk::ListStore.new(Gdk::Pixbuf, String)
+
+    partselector.model = model
+    renderer = Gtk::CellRendererPixbuf.new
+    partselector.pack_start(renderer, false)
+    partselector.set_attributes(renderer, :pixbuf => 0)
+    
+    renderer = Gtk::CellRendererText.new
+    partselector.pack_start(renderer, true)
+    partselector.set_attributes(renderer, :text => 1)
+
+    partselector.signal_connect("changed") { |partselector|
+      set_current_part(@parts[partselector.active])
     }
 
-    partselector.append_column(Gtk::TreeViewColumn.new("Stuff",
-                                                       Gtk::CellRendererText.new, 
-                                                       {:text => 0}))    
+    @parts.each {|part|
+      #puts part.to_s
+      #iter = partselector.model.append()
+      #iter[0] = "bla" # part.to_s
+      # partselector.append_text part.to_s
+
+      iter = model.append
+      iter[0] = @glade['FaceBuilder'].render_icon(Gtk::Stock::OK, Gtk::IconSize::MENU, "icon")
+      iter[1] = part.to_s
+    }
   end
 
   def set_current_part(type)
     @parts.each_with_index() { |p, i|
       if type == p then
+        @glade['PartSelector'].active = i
+
         if @current_part != i
           @list.clear()
           Dir.new("data/#{type}/").grep(/\.png$/).each{|v|
@@ -310,9 +335,10 @@ class FacebuilderGlade
               end
             end
 
+            
             # Add keep of aspect ratio
-            iter[0] = pixbuf
-            iter[1] = filename
+            iter[1] = pixbuf
+            iter[0] = filename
           }
 
           @current_part = i
