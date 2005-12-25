@@ -65,6 +65,7 @@ class FacePart
 
         @parent.undo_stack << FaceCommand.new(proc{ @parent.get_part(@type).offset = old_offset },
                                               proc{ @parent.get_part(@type).offset = offset     })
+        $facebuilder.update_undo() if $facebuilder
       end
     end
   end
@@ -158,8 +159,6 @@ class FacePart
   end
 
   def update_items()
-    $facebuilder.update_undo() if $facebuilder
-
     if @canvas_items.length == 1 then
       @canvas_items[0].affine_absolute(Art::Affine.translate(@offset.x, @offset.y) *
                                        Art::Affine.rotate(@rotation) *
@@ -188,6 +187,16 @@ class FacePart
   end
 
   def filename=(filename)
+    if @parent.use_undo() then
+      old_filename = @filename.clone()
+      new_filename = filename.clone()
+      @parent.undo_stack << FaceCommand.new(proc{ @parent.without_undo {
+                                                @parent.get_part(@type).filename=(old_filename) }},
+                                            proc{ @parent.without_undo {
+                                                @parent.get_part(@type).filename=(new_filename) }})
+      $facebuilder.update_undo() if $facebuilder
+    end
+
     @filename = filename    
     pixbuf = Gdk::Pixbuf.new(@filename)
     @canvas_items.each {|item|
@@ -216,10 +225,12 @@ end
 
 class Face
   attr_accessor :undo_stack, :redo_stack, :parts
+  attr_reader   :use_undo
 
   def initialize(root, filename = nil)
     @undo_stack = []
     @redo_stack = []
+    @use_undo   = true
 
     @root = root
     @parts  = {
@@ -236,6 +247,20 @@ class Face
       :hair      => FacePart.new(self, root, :hair,      "data/hair/0000.png",      Point.new( 0, -20)),
       :hat       => FacePart.new(self, root, :hat,       "data/hat/0000.png",       Point.new( 0, -50))
     }
+  end
+
+  def without_undo()
+    disable_undo()
+    yield()
+    enable_undo()
+  end
+
+  def disable_undo()
+    @use_undo = false
+  end
+
+  def enable_undo()
+    @use_undo = true
   end
 
   def get_part(type)

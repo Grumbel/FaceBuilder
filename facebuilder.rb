@@ -58,6 +58,9 @@ class FacebuilderGlade
 
     @glade['toolbutton_open_file'].signal_connect("clicked") { |*params| on_open1_activate(nil) }
     @glade['toolbutton_save_file'].signal_connect("clicked") { |*params| on_save_as1_activate(nil) }
+
+    @glade['toolbutton_undo'].set_sensitive(false)
+    @glade['toolbutton_redo'].set_sensitive(false)
   end
 
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
@@ -161,10 +164,12 @@ class FacebuilderGlade
 
   def on_undo()
     @face.do_undo()
+    update_undo()
   end
 
   def on_redo()
     @face.do_redo()
+    update_undo()
   end
   
   def on_open1_activate(widget)
