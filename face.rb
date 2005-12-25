@@ -62,9 +62,9 @@ class FacePart
       if @old_offset != @offset then
         old_offset = @old_offset.clone()
         offset     = @offset.clone()
-
-        @parent.undo_stack << FaceCommand.new(proc{ @parent.get_part(@type).offset = old_offset },
-                                              proc{ @parent.get_part(@type).offset = offset     })
+        
+        @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.get_part(@type).offset = old_offset },
+                                                  proc{ @parent.get_part(@type).offset = offset     }))
         $facebuilder.update_undo() if $facebuilder
       end
     end
@@ -190,10 +190,10 @@ class FacePart
     if @parent.use_undo() then
       old_filename = @filename.clone()
       new_filename = filename.clone()
-      @parent.undo_stack << FaceCommand.new(proc{ @parent.without_undo {
-                                                @parent.get_part(@type).filename=(old_filename) }},
-                                            proc{ @parent.without_undo {
-                                                @parent.get_part(@type).filename=(new_filename) }})
+      @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.without_undo {
+                                                    @parent.get_part(@type).filename=(old_filename) }},
+                                                proc{ @parent.without_undo {
+                                                    @parent.get_part(@type).filename=(new_filename) }}))
       $facebuilder.update_undo() if $facebuilder
     end
 
@@ -224,8 +224,8 @@ class FacePart
 end
 
 class Face
-  attr_accessor :undo_stack, :redo_stack, :parts
-  attr_reader   :use_undo
+  attr_accessor :redo_stack, :parts
+  attr_reader   :use_undo, :undo_stack
 
   def initialize(root, filename = nil)
     @undo_stack = []
@@ -306,6 +306,11 @@ class Face
       cmd.do_redo()
       @undo_stack << cmd
     end    
+  end
+
+  def add_to_undo_stack(item)
+    @redo_stack.clear()
+    @undo_stack << item
   end
 
   def has_undo_stack?()

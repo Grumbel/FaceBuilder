@@ -59,6 +59,10 @@ class FacebuilderGlade
     @glade['toolbutton_open_file'].signal_connect("clicked") { |*params| on_open1_activate(nil) }
     @glade['toolbutton_save_file'].signal_connect("clicked") { |*params| on_save_as1_activate(nil) }
 
+    @glade['toolbutton_reload'].signal_connect("clicked") { |*params| 
+      @face.reload()
+    }
+
     @glade['toolbutton_undo'].set_sensitive(false)
     @glade['toolbutton_redo'].set_sensitive(false)
   end
