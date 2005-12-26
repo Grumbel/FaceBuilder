@@ -284,12 +284,12 @@ class FacebuilderGlade
   end
 
   def setup_faceparts()
-    @treeview = @glade['FaceParts']
+    faceparts = @glade['FaceParts']
     @list = Gtk::ListStore.new(String, Gdk::Pixbuf)
-    @treeview.model = @list
-    @treeview.set_property('selection-mode', Gtk::SELECTION_BROWSE)
+    faceparts.model = @list
+    faceparts.set_property('selection-mode', Gtk::SELECTION_BROWSE)
 
-    @treeview.signal_connect("selection-changed") { |iconview|
+    faceparts.signal_connect("selection-changed") { |iconview|
       row = iconview.selected_items()[0]
       if row then # when does this get nil?
         filename = iconview.model.get_value(@list.get_iter(row), 0)
@@ -299,8 +299,8 @@ class FacebuilderGlade
       end
     }
 
-    @treeview.text_column   = -1
-    @treeview.pixbuf_column = 1
+    faceparts.text_column   = -1
+    faceparts.pixbuf_column =  1
   end
 
   def setup_partselector()
@@ -340,8 +340,15 @@ class FacebuilderGlade
       if type == p then
         @glade['PartSelector'].active = i
 
-        if @current_part != i
+        if @current_part != i then
           @list.clear()
+
+          # Add empty item
+          iter = @list.append()
+          iter[0] = nil
+          iter[1] = Gdk::Pixbuf.new('data/empty.png')
+
+          # Add other items
           Dir.new("data/#{type}/").grep(/\.png$/).each{|v|
             filename = "data/#{type}/#{v}"
             iter = @list.append()
@@ -357,9 +364,19 @@ class FacebuilderGlade
               end
             end
 
-            
+            whitepixbuf = Gdk::Pixbuf.new(Gdk::Pixbuf::COLORSPACE_RGB, true, 8, 64, 64)
+            whitepixbuf.fill!(0xf5f5f5ff)
+
+            whitepixbuf.composite!(pixbuf, 
+                                   (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
+                                   pixbuf.width, pixbuf.height,
+                                   (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
+                                   1.0, 1.0,
+                                   Gdk::Pixbuf::INTERP_BILINEAR,
+                                   255)            
+
             # Add keep of aspect ratio
-            iter[1] = pixbuf
+            iter[1] = whitepixbuf
             iter[0] = filename
           }
 

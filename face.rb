@@ -46,7 +46,7 @@ class FacePart
         # Calculate the new position
 
         if event.state & Gdk::Window::SHIFT_MASK == Gdk::Window::SHIFT_MASK
-          @offset.x = @old_offset.x
+          @offset.x = 0 # @old_offset.x
         else
           @offset.x = @old_offset.x + item_x - @x
         end
@@ -93,10 +93,6 @@ class FacePart
                                              :height => im.height,
                                              :anchor => Gtk::ANCHOR_CENTER)
 
-    @canvas_items.last.signal_connect("event") { |item, event|
-      item_event(item, event)
-    }
-
     case @type
     when :eye, :ear, :eyebrow, :mouthfold
       @canvas_items << Gnome::CanvasPixbuf.new(root,
@@ -107,6 +103,13 @@ class FacePart
                                                :height => im.height,
                                                :anchor => Gtk::ANCHOR_CENTER)
     end
+    
+    @canvas_items.each {|i|
+      i.signal_connect("event") { |item, event|
+        item_event(item, event)
+      }
+    }
+
     update_items()
   end
 
@@ -187,21 +190,27 @@ class FacePart
   end
 
   def filename=(filename)
-    if @parent.use_undo() then
-      old_filename = @filename.clone()
-      new_filename = filename.clone()
-      @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.without_undo {
-                                                    @parent.get_part(@type).filename=(old_filename) }},
-                                                proc{ @parent.without_undo {
-                                                    @parent.get_part(@type).filename=(new_filename) }}))
-      $facebuilder.update_undo() if $facebuilder
-    end
+    if filename and ! filename.empty? then
+      if @parent.use_undo() then
+        old_filename = @filename.clone()
+        new_filename = filename.clone()
+        @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.without_undo {
+                                                      @parent.get_part(@type).filename=(old_filename) }},
+                                                  proc{ @parent.without_undo {
+                                                      @parent.get_part(@type).filename=(new_filename) }}))
+        $facebuilder.update_undo() if $facebuilder
+      end
 
-    @filename = filename    
-    pixbuf = Gdk::Pixbuf.new(@filename)
-    @canvas_items.each {|item|
-      item.pixbuf = pixbuf
-    }
+      @canvas_items.each{ |item| item.show() }
+      
+      @filename = filename    
+      pixbuf = Gdk::Pixbuf.new(@filename)
+      @canvas_items.each {|item|
+        item.pixbuf = pixbuf
+      }
+    else
+      @canvas_items.each{ |item| item.hide() }
+    end
   end
 
   def offset=(offset)
@@ -214,12 +223,14 @@ class FacePart
   end
 
   def save(out)
-    out << "  <#{type}>\n"
-    out << "    <filename>#{@filename}</filename>\n"
-    out << "    <offset><x>#{@offset.x}</x><y>#{@offset.y}</y></offset>\n"
-    out << "    <scale>#{@scale}</scale>\n"
-    out << "    <rotation>#{@rotation}</rotation>\n"
-    out << "  </#{type}>\n"
+    if filename then
+      out << "  <#{type}>\n"
+      out << "    <filename>#{@filename}</filename>\n"
+      out << "    <offset><x>#{@offset.x}</x><y>#{@offset.y}</y></offset>\n"
+      out << "    <scale>#{@scale}</scale>\n"
+      out << "    <rotation>#{@rotation}</rotation>\n"
+      out << "  </#{type}>\n"
+    end
   end
 end
 
