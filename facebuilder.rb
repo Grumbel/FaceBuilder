@@ -304,7 +304,7 @@ class FacebuilderGlade
                           # "logo_icon_name" => "gtk-home",
                           "logo" => Gdk::Pixbuf.new("data/logo.png"),
                           "name" => "Face Builder",
-                          "version" => "0.0.1",
+                          "version" => "0.1.0",
                           "website" => "http://windstille.berlios.de/facebuilder/",
                           "website_label" => "Face Builder"
                           )
