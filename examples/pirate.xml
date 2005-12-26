@@ -29,12 +29,6 @@
     <scale>1.0</scale>
     <rotation>0.0</rotation>
   </glasses>
-  <beard>
-    <filename>data/beard/0000.png</filename>
-    <offset><x>0.0</x><y>75.0</y></offset>
-    <scale>1.0</scale>
-    <rotation>0.0</rotation>
-  </beard>
   <eyebrow>
     <filename>data/eyebrow/0001.png</filename>
     <offset><x>37.0</x><y>-25.0</y></offset>

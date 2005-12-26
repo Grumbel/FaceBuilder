@@ -15,8 +15,8 @@ class FacebuilderGlade
 
   # Creates menu hints.
   def create_uiinfo_menus(name)
-    app = @glade['FaceBuilder']
-    tips = @glade.get_tooltips(app.toplevel)
+    @app = @glade['FaceBuilder']
+    tips = @glade.get_tooltips(@app.toplevel)
     callback_dummy = Proc.new{} #Dummy 
     uiinfos = [
                Gnome::UIInfo::menu_new_item('_New', nil, callback_dummy, nil),
@@ -24,10 +24,8 @@ class FacebuilderGlade
                Gnome::UIInfo::menu_save_item(callback_dummy, nil),
                Gnome::UIInfo::menu_save_as_item(callback_dummy, nil),
                Gnome::UIInfo::menu_quit_item(callback_dummy, nil),
-               Gnome::UIInfo::menu_cut_item(callback_dummy, nil),
                Gnome::UIInfo::menu_copy_item(callback_dummy, nil),
                Gnome::UIInfo::menu_paste_item(callback_dummy, nil),
-               Gnome::UIInfo::menu_clear_item(callback_dummy, nil),
                Gnome::UIInfo::menu_properties_item(callback_dummy, nil),
                Gnome::UIInfo::menu_preferences_item(callback_dummy, nil),
                Gnome::UIInfo::menu_about_item(callback_dummy, nil),
@@ -37,14 +35,12 @@ class FacebuilderGlade
     uiinfos[2][9]  = @glade['save1']
     uiinfos[3][9]  = @glade['save_as1']
     uiinfos[4][9]  = @glade['quit1']
-    uiinfos[5][9]  = @glade['cut1']
-    uiinfos[6][9]  = @glade['copy1']
-    uiinfos[7][9]  = @glade['paste1']
-    uiinfos[8][9]  = @glade['clear1']
-    uiinfos[9][9]  = @glade['properties1']
-    uiinfos[10][9] = @glade['preferences1']
-    uiinfos[11][9] = @glade['about1']
-    app.install_menu_hints(uiinfos)
+    uiinfos[5][9]  = @glade['copy1']
+    uiinfos[6][9]  = @glade['paste1']
+    uiinfos[7][9]  = @glade['properties1']
+    uiinfos[8][9] = @glade['preferences1']
+    uiinfos[9][9] = @glade['about1']
+    @app.install_menu_hints(uiinfos)
   end
 
   # Creates tooltips.
@@ -59,6 +55,7 @@ class FacebuilderGlade
 
     @glade['toolbutton_open_file'].signal_connect("clicked") { |*params| on_open1_activate(nil) }
     @glade['toolbutton_save_file'].signal_connect("clicked") { |*params| on_save_as1_activate(nil) }
+    @glade['toolbutton_save_as_file'].signal_connect("clicked") { |*params| on_save_as1_activate(nil) }
 
     @glade['toolbutton_reload'].signal_connect("clicked") { |*params| 
       @face.reload()
@@ -66,6 +63,33 @@ class FacebuilderGlade
 
     @glade['toolbutton_undo'].set_sensitive(false)
     @glade['toolbutton_redo'].set_sensitive(false)
+
+    @glade['toolbutton_copy'].signal_connect("clicked")  { |*params| on_copy1_activate(nil) }
+    @glade['toolbutton_paste'].signal_connect("clicked") { |*params| on_paste1_activate(nil) }
+
+    @glade['toolbutton_size_minus'].signal_connect("clicked") { |*params| 
+      part = @face.get_part(@parts[@current_part])
+      part.scale=(part.scale / 1.02) if part
+    }
+    @glade['toolbutton_size_plus'].signal_connect("clicked")  { |*params| 
+      part = @face.get_part(@parts[@current_part])
+      part.scale=(part.scale * 1.02) if part
+    }
+
+    @glade['toolbutton_rotate_left'].signal_connect("clicked")  { |*params|
+      part = @face.get_part(@parts[@current_part])
+      part.rotation=(part.rotation - 1.0) if part
+    }
+    @glade['toolbutton_rotate_right'].signal_connect("clicked") { |*params| 
+      part = @face.get_part(@parts[@current_part])
+      part.rotation=(part.rotation + 1.0) if part
+    }
+
+    @glade['toolbutton_reset_properties'].signal_connect("clicked") {|*params|
+      part = @face.get_part(@parts[@current_part])
+      part.rotation=(0) if part
+      part.scale=(1.0) if part
+    }      
   end
 
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
@@ -81,33 +105,40 @@ class FacebuilderGlade
 
     @canvas = @glade['FaceCanvas']
     @face = Face.new(@canvas.root)
+    @face.load("examples/pirate.xml")
     @canvas.modify_bg(Gtk::STATE_NORMAL, Gdk::Color.new(65535, 65535, 65535))
 
     setup_faceparts()
     setup_partselector()
 
-    setup_controls(@canvas.root, Point.new(0, -200),  :hat)
-    setup_controls(@canvas.root, Point.new(-200, -140),   :forehead)
-    setup_controls(@canvas.root, Point.new(0, 200),   :head)
-    setup_controls(@canvas.root, Point.new(200, -140), :hair)
+    @canvas_controls = []
+    group = Gnome::CanvasGroup.new(@canvas.root, {:x => 0.0, :y => 0.0 })
+
+    setup_controls(group, Point.new(0, -200),  :hat)
+    setup_controls(group, Point.new(-200, -140),   :forehead)
+    setup_controls(group, Point.new(0, 200),   :head)
+    setup_controls(group, Point.new(200, -140), :hair)
     
-    setup_controls(@canvas.root, Point.new(-200, 0), :glasses)
+    setup_controls(group, Point.new(-200, 0), :glasses)
     
-    setup_controls(@canvas.root, Point.new(200, -40), :eyebrow)
-    setup_controls(@canvas.root, Point.new(200, 0),   :eye)
-    setup_controls(@canvas.root, Point.new(200, 40),  :nose)
-    setup_controls(@canvas.root, Point.new(200, 80),  :mouth)
-    setup_controls(@canvas.root, Point.new(-200, 80),  :mouthfold)
+    setup_controls(group, Point.new(200, -40), :eyebrow)
+    setup_controls(group, Point.new(200, 0),   :eye)
+    setup_controls(group, Point.new(200, 40),  :nose)
+    setup_controls(group, Point.new(200, 80),  :mouth)
+    setup_controls(group, Point.new(-200, 80),  :mouthfold)
+
+    hide_controls()
 
     Gnome::CanvasText.new(@canvas.root,
                           {:text => 
                             "PgUp, PgDown:\tscale\n" +
                             "Home, End:\t\trotate\n" +
-                            "Cursorkeys:\t\tmove\n",
-                            :x => -180,
-                            :y => 180,
+                            "Cursorkeys:\t\tmove\n" +
+                            "Cursor+Shift:\tmove vertical",
+                            :x => -256,
+                            :y => 256,
                             :font => "Sans 10",
-                            :anchor => Gtk::ANCHOR_N,
+                            :anchor => Gtk::ANCHOR_SW,
                             :fill_color => "black"})
 
     @canvas.signal_connect_after("button-press-event") { |widget, event|
@@ -165,6 +196,13 @@ class FacebuilderGlade
         part.offset = Point.new(part.offset.x + 1, part.offset.y) if part
       end
     }
+
+    @glade['toolbutton_copy'].set_sensitive(false)
+    @glade['toolbutton_paste'].set_sensitive(false)
+    @glade['copy1'].set_sensitive(false)
+    @glade['paste1'].set_sensitive(false)
+    @glade['properties1'].set_sensitive(false)
+    @glade['preferences1'].set_sensitive(false)
   end
 
   def on_undo()
@@ -194,7 +232,7 @@ class FacebuilderGlade
   end
 
   def on_export_as_svg1_activate(widget)
-    dialog =  Gtk::FileChooserDialog.new("FaceBuilder - Export face as PNG", nil,
+    dialog =  Gtk::FileChooserDialog.new("FaceBuilder - Export face as SVG", nil,
                                          Gtk::FileChooser::ACTION_SAVE,
                                          "gnome-vfs",
                                          [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
@@ -227,7 +265,19 @@ class FacebuilderGlade
 
   def on_paste1_activate(widget)
     puts "on_paste1_activate() is not implemented yet."
+
+    clipboard = @app.get_clipboard(Gdk::Selection::CLIPBOARD)
+
+    clipboard.request_text{|clipboard, text| 
+      puts "GOt: >>#{text}<<"
+    }
+
+    clipboard.request_contents(Gdk::Atom.intern("CLIPBOARD", false)) { |clipboard, selection_data| 
+      puts selection_data.type, selection_data.text
+    }
+
   end
+
   def on_save_as1_activate(widget)
     dialog =  Gtk::FileChooserDialog.new("Gtk::FileChooser sample", nil,
                                          Gtk::FileChooser::ACTION_SAVE,
@@ -262,8 +312,11 @@ class FacebuilderGlade
   def on_preferences1_activate(widget)
     puts "on_preferences1_activate() is not implemented yet."
   end
+
   def on_copy1_activate(widget)
     puts "on_copy1_activate() is not implemented yet."
+    clipboard = @canvas.get_clipboard(Gdk::Selection::CLIPBOARD)
+    # puts clipboard.text
   end
   def on_new1_activate(widget)
     puts "on_new1_activate() is not implemented yet."
@@ -280,8 +333,24 @@ class FacebuilderGlade
   def on_properties1_activate(widget)
     puts "on_properties1_activate() is not implemented yet."
   end
+  def on_show_controls1_activate(widget)
+    if widget.active? then
+      show_controls()
+    else
+      hide_controls()
+    end
+  end
+
   def on_quit1_activate(widget)
     Gtk.main_quit
+  end
+
+  def hide_controls()
+    @canvas_controls.each {|item| item.hide() }
+  end
+
+  def show_controls()
+    @canvas_controls.each {|item| item.show() }
   end
 
   def setup_controls(root, pos, facepart)
@@ -314,6 +383,8 @@ class FacebuilderGlade
       @face.get_part(facepart).next_item()
       set_current_part(facepart)
     }
+    @canvas_controls += [left, right]
+
     return [left, right]
   end
 

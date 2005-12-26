@@ -47,7 +47,7 @@ class FacePart
         # Calculate the new position
 
         if event.state & Gdk::Window::SHIFT_MASK == Gdk::Window::SHIFT_MASK
-          @offset.x = 0 # @old_offset.x
+          @offset.x = @old_offset.x
         else
           @offset.x = @old_offset.x + item_x - @x
         end
@@ -71,21 +71,18 @@ class FacePart
     end
   end
 
-  def initialize(parent, root, type, filename, offset)
+  def initialize(parent, root, type, offset)
     @parent = parent
     @type     = type
+    
     @offset   = offset
-    @filename = filename
+    @filename = nil
     @scale    = 1.0
     @rotation = 0
 
     @canvas_items = []
 
-    im = Gdk::Pixbuf.new(@filename)
-    if ! im then 
-      raise "#{@filename}: file not found: #{im.inspect}"
-    end
-
+    im = Gdk::Pixbuf.new("data/empty.png")
     @canvas_items << Gnome::CanvasPixbuf.new(root,
                                              :pixbuf => im,
                                              :x => 0, # offset.x,
@@ -111,6 +108,7 @@ class FacePart
       }
     }
 
+    self.filename=(nil)
     update_items()
   end
 
@@ -191,17 +189,17 @@ class FacePart
   end
 
   def filename=(filename)
+    if @parent.use_undo() and filename != @filename then
+      old_filename = @filename.clone() if @filename
+      new_filename = filename.clone()  if filename
+      @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.without_undo {
+                                                    @parent.get_part(@type).filename=(old_filename) }},
+                                                proc{ @parent.without_undo {
+                                                    @parent.get_part(@type).filename=(new_filename) }}))
+      $facebuilder.update_undo() if $facebuilder
+    end
+    
     if filename and ! filename.empty? then
-      if @parent.use_undo() then
-        old_filename = @filename.clone()
-        new_filename = filename.clone()
-        @parent.add_to_undo_stack(FaceCommand.new(proc{ @parent.without_undo {
-                                                      @parent.get_part(@type).filename=(old_filename) }},
-                                                  proc{ @parent.without_undo {
-                                                      @parent.get_part(@type).filename=(new_filename) }}))
-        $facebuilder.update_undo() if $facebuilder
-      end
-
       @canvas_items.each{ |item| item.show() }
       
       @filename = filename    
@@ -286,18 +284,18 @@ class Face
 
     @root = root
     @parts  = {
-      :head      => FacePart.new(self, root, :head,      "data/head/0000.png",      Point.new( 0,   0)),
-      :forehead  => FacePart.new(self, root, :forehead,  "data/forehead/0000.png",  Point.new( 0, -75)),
-      :eye       => FacePart.new(self, root, :eye,       "data/eye/0000.png",       Point.new(35, -10)),
-      :eyebrow   => FacePart.new(self, root, :eyebrow,   "data/eyebrow/0000.png",   Point.new(45, -30)),
-      :ear       => FacePart.new(self, root, :ear,       "data/ear/0000.png",       Point.new(90,   0)),
-      :nose      => FacePart.new(self, root, :nose,      "data/nose/0000.png",      Point.new( 0,  30)),
-      :mouth     => FacePart.new(self, root, :mouth,     "data/mouth/0000.png",     Point.new( 0,  75)),
-      :mouthfold => FacePart.new(self, root, :mouthfold, "data/mouthfold/0000.png", Point.new(40,  75)),
-      :beard     => FacePart.new(self, root, :beard,     "data/beard/0000.png",     Point.new( 0,  75)),
-      :glasses   => FacePart.new(self, root, :glasses,   "data/glasses/0000.png",   Point.new( 0, -10)),
-      :hair      => FacePart.new(self, root, :hair,      "data/hair/0000.png",      Point.new( 0, -20)),
-      :hat       => FacePart.new(self, root, :hat,       "data/hat/0000.png",       Point.new( 0, -50))
+      :head      => FacePart.new(self, root, :head,      Point.new( 0,   0)),
+      :forehead  => FacePart.new(self, root, :forehead,  Point.new( 0, -75)),
+      :eye       => FacePart.new(self, root, :eye,       Point.new(35, -10)),
+      :eyebrow   => FacePart.new(self, root, :eyebrow,   Point.new(45, -30)),
+      :ear       => FacePart.new(self, root, :ear,       Point.new(90,   0)),
+      :nose      => FacePart.new(self, root, :nose,      Point.new( 0,  30)),
+      :mouth     => FacePart.new(self, root, :mouth,     Point.new( 0,  75)),
+      :mouthfold => FacePart.new(self, root, :mouthfold, Point.new(40,  75)),
+      :beard     => FacePart.new(self, root, :beard,     Point.new( 0,  75)),
+      :glasses   => FacePart.new(self, root, :glasses,   Point.new( 0, -10)),
+      :hair      => FacePart.new(self, root, :hair,      Point.new( 0, -20)),
+      :hat       => FacePart.new(self, root, :hat,       Point.new( 0, -50))
     }
   end
 
