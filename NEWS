@@ -9,5 +9,7 @@ FaceBuilder 0.1.0
 * plenty of more faceparts
 * faceparts are now all shaded
 * simple undo/redo
+* SVG export
+* PNG export
 
 # EOF #

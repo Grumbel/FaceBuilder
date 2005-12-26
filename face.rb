@@ -1,4 +1,5 @@
 require "rexml/document"
+require "base64.rb"
 require 'gnomecanvas2'
 
 class FaceCommand
@@ -209,6 +210,7 @@ class FacePart
         item.pixbuf = pixbuf
       }
     else
+      @filename = nil
       @canvas_items.each{ |item| item.hide() }
     end
   end
@@ -222,8 +224,47 @@ class FacePart
     return @offset
   end
 
+  def save_svg(out)
+    if @filename then
+      pixbuf = Gdk::Pixbuf.new(@filename)
+
+      out.write("\n\n<!-- #{@type.to_s} -->\n")
+      out.write("<g transform=\"")
+      out.write("translate(#{pixbuf.width/2},#{pixbuf.height/2}) ")
+      out.write("translate(#{-pixbuf.width/2 + 256},#{-pixbuf.height/2 + 256}) ")
+      out.write("translate(#{offset.x},#{offset.y}) ")
+      out.write("rotate(#{@rotation}) ")
+      out.write("scale(#{@scale}) ")
+      out.write("translate(#{-pixbuf.width/2},#{-pixbuf.height/2}) ")
+
+      out.write("\">")
+      out.write("<image height=\"#{pixbuf.height}\" width=\"#{pixbuf.width}\" ")
+      out.write("xlink:href=\"data:image/png;base64,#{Base64.encode64(File.new(@filename).read())}\" ")
+      out.write("x=\"0\" y=\"0\" />")
+      out.write("</g>\n")
+
+      case @type
+      when :eye, :ear, :eyebrow, :mouthfold
+        out.write("<g transform=\"")
+        out.write("translate(#{pixbuf.width/2},#{pixbuf.height/2}) ")
+        out.write("scale(-1.0, 1.0) ")
+        out.write("translate(#{pixbuf.width/2 - 256},#{-pixbuf.height/2 + 256}) ")
+        out.write("translate(#{offset.x},#{offset.y}) ")
+        out.write("rotate(#{@rotation}) ")
+        out.write("scale(#{@scale}) ")
+        out.write("translate(#{-pixbuf.width/2},#{-pixbuf.height/2}) ")
+
+        out.write("\">")
+        out.write("<image height=\"#{pixbuf.height}\" width=\"#{pixbuf.width}\" ")
+        out.write("xlink:href=\"data:image/png;base64,#{Base64.encode64(File.new(@filename).read())}\" ")
+        out.write("x=\"0\" y=\"0\" />")
+        out.write("</g>\n")
+      end
+    end
+  end
+
   def save(out)
-    if filename then
+    if @filename then
       out << "  <#{type}>\n"
       out << "    <filename>#{@filename}</filename>\n"
       out << "    <offset><x>#{@offset.x}</x><y>#{@offset.y}</y></offset>\n"
@@ -280,6 +321,33 @@ class Face
 
   def reload()
     @parts.each{|key, val| val.reload() }
+  end
+
+  def save_as_png(filename)
+    # FIXME: Only primitive export, only copies from framebuffer and doesn't work with overlap
+    puts $facebuilder.canvas.window
+    window = $facebuilder.canvas.window
+    pixbuf = Gdk::Pixbuf.from_drawable(window.colormap, window, 0, 0, 512, 512)
+    pixbuf.save(filename,"png")
+  end
+
+  def save_as_svg(filename)
+    f = File.new(filename, "w")
+    f.write <<EOF
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns="http://www.w3.org/2000/svg" version="1.1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   width="512"
+   height="512">
+EOF
+    
+    @parts.each{ |key, val| 
+      val.save_svg(f)
+    }
+    f.write "</svg>"
+    f.close()    
   end
 
   def save(filename)

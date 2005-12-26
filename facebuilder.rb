@@ -11,7 +11,8 @@ class FacebuilderGlade
   include GetText
 
   attr :glade
-  
+  attr :canvas
+
   # Creates menu hints.
   def create_uiinfo_menus(name)
     app = @glade['FaceBuilder']
@@ -191,6 +192,39 @@ class FacebuilderGlade
       dialog.destroy
     }
   end
+
+  def on_export_as_svg1_activate(widget)
+    dialog =  Gtk::FileChooserDialog.new("FaceBuilder - Export face as PNG", nil,
+                                         Gtk::FileChooser::ACTION_SAVE,
+                                         "gnome-vfs",
+                                         [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
+                                         [Gtk::Stock::SAVE,   Gtk::Dialog::RESPONSE_ACCEPT]
+                                         )
+    dialog.run { |response|
+      if response == Gtk::Dialog::RESPONSE_ACCEPT then
+        @face.save_as_svg(dialog.filename)
+      end
+      
+      dialog.destroy
+    }       
+  end
+
+  def on_export_as_png1_activate(widget)
+    dialog =  Gtk::FileChooserDialog.new("FaceBuilder - Export face as PNG", nil,
+                                         Gtk::FileChooser::ACTION_SAVE,
+                                         "gnome-vfs",
+                                         [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
+                                         [Gtk::Stock::SAVE,   Gtk::Dialog::RESPONSE_ACCEPT]
+                                         )
+    dialog.run { |response|
+      if response == Gtk::Dialog::RESPONSE_ACCEPT then
+        @face.save_as_png(dialog.filename)
+      end
+      
+      dialog.destroy
+    }    
+  end
+
   def on_paste1_activate(widget)
     puts "on_paste1_activate() is not implemented yet."
   end
