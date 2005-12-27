@@ -6,7 +6,7 @@ FaceBuilder is a little toy application that lets you construct faces
 by putting together eyes, nose, mouth, head, hair and some additional
 items. You can also move, scale and rotate each of those face-parts as
 you like. The results can be saved to XML files and it currently
-provides ~50 faceparts in total.
+provides ~100 faceparts in total.
 
 Running
 -------

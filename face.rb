@@ -285,10 +285,10 @@ class Face
     @root = root
     @parts  = {
       :head      => FacePart.new(self, root, :head,      Point.new( 0,   0)),
+      :ear       => FacePart.new(self, root, :ear,       Point.new(90,   0)),
       :forehead  => FacePart.new(self, root, :forehead,  Point.new( 0, -75)),
       :eye       => FacePart.new(self, root, :eye,       Point.new(35, -10)),
       :eyebrow   => FacePart.new(self, root, :eyebrow,   Point.new(45, -30)),
-      :ear       => FacePart.new(self, root, :ear,       Point.new(90,   0)),
       :nose      => FacePart.new(self, root, :nose,      Point.new( 0,  30)),
       :mouth     => FacePart.new(self, root, :mouth,     Point.new( 0,  75)),
       :mouthfold => FacePart.new(self, root, :mouthfold, Point.new(40,  75)),
