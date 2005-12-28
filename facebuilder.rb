@@ -8,8 +8,6 @@ require 'face.rb'
 Point = Struct.new("Point", :x, :y)
 
 class FacebuilderGlade
-  include GetText
-
   attr :glade
   attr :canvas
 
@@ -46,9 +44,9 @@ class FacebuilderGlade
   # Creates tooltips.
   def create_tooltips
     @tooltip = Gtk::Tooltips.new
-    @glade['toolbutton1'].set_tooltip(@tooltip, _('New File'))
-    @glade['toolbutton_open_file'].set_tooltip(@tooltip, _('Open File'))
-    @glade['toolbutton_save_file'].set_tooltip(@tooltip, _('Save File'))
+    @glade['toolbutton1'].set_tooltip(@tooltip, 'New File')
+    @glade['toolbutton_open_file'].set_tooltip(@tooltip, 'Open File')
+    @glade['toolbutton_save_file'].set_tooltip(@tooltip, 'Save File')
 
     @glade['toolbutton_undo'].signal_connect("clicked") { |*params| self.on_undo() }
     @glade['toolbutton_redo'].signal_connect("clicked") { |*params| self.on_redo() }
@@ -93,7 +91,6 @@ class FacebuilderGlade
   end
 
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
-    bindtextdomain(domain, localedir, nil, "UTF-8")
     @glade = GladeXML.new(path_or_data, root, domain, localedir, flag) {|handler| method(handler)}
     
     create_uiinfo_menus(domain)

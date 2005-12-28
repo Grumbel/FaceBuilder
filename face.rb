@@ -287,12 +287,12 @@ class Face
       :head      => FacePart.new(self, root, :head,      Point.new( 0,   0)),
       :ear       => FacePart.new(self, root, :ear,       Point.new(90,   0)),
       :forehead  => FacePart.new(self, root, :forehead,  Point.new( 0, -75)),
+      :beard     => FacePart.new(self, root, :beard,     Point.new( 0,  75)),
       :eye       => FacePart.new(self, root, :eye,       Point.new(35, -10)),
       :eyebrow   => FacePart.new(self, root, :eyebrow,   Point.new(45, -30)),
       :nose      => FacePart.new(self, root, :nose,      Point.new( 0,  30)),
       :mouth     => FacePart.new(self, root, :mouth,     Point.new( 0,  75)),
       :mouthfold => FacePart.new(self, root, :mouthfold, Point.new(40,  75)),
-      :beard     => FacePart.new(self, root, :beard,     Point.new( 0,  75)),
       :glasses   => FacePart.new(self, root, :glasses,   Point.new( 0, -10)),
       :hair      => FacePart.new(self, root, :hair,      Point.new( 0, -20)),
       :hat       => FacePart.new(self, root, :hat,       Point.new( 0, -50))
