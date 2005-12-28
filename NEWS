@@ -2,6 +2,15 @@
 | FaceBuilder News
 +--------------
 
+FaceBuilder 0.1.1
+=================
+* some more male faceparts
+* removed gettext dependency
+* new buttons to center horizontal and vertical
+* fixed loading
+* quit properly when window close button is pressed
+
+
 FaceBuilder 0.1.0
 =================
 

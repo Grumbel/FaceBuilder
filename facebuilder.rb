@@ -4,6 +4,7 @@
 #
 require 'libglade2'
 require 'face.rb'
+require 'command_line.rb'
 
 Point = Struct.new("Point", :x, :y)
 
@@ -44,6 +45,7 @@ class FacebuilderGlade
   # Creates tooltips.
   def create_tooltips
     @tooltip = Gtk::Tooltips.new
+
     @glade['toolbutton1'].set_tooltip(@tooltip, 'New File')
     @glade['toolbutton_open_file'].set_tooltip(@tooltip, 'Open File')
     @glade['toolbutton_save_file'].set_tooltip(@tooltip, 'Save File')
@@ -74,6 +76,16 @@ class FacebuilderGlade
       part.scale=(part.scale * 1.02) if part
     }
 
+    @glade['toolbutton_center_vertical'].signal_connect("clicked")  { |*params| 
+      part = @face.get_part(@parts[@current_part])
+      part.offset = Point.new(part.offset.x, 0) if part
+    }
+
+    @glade['toolbutton_center_horizontal'].signal_connect("clicked")  { |*params| 
+      part = @face.get_part(@parts[@current_part])
+      part.offset = Point.new(0, part.offset.y) if part
+    }
+
     @glade['toolbutton_rotate_left'].signal_connect("clicked")  { |*params|
       part = @face.get_part(@parts[@current_part])
       part.rotation=(part.rotation - 1.0) if part
@@ -91,8 +103,8 @@ class FacebuilderGlade
   end
 
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
-    @glade = GladeXML.new(path_or_data, root, domain, localedir, flag) {|handler| method(handler)}
-    
+    @glade = GladeXML.new(path_or_data, root, domain, localedir, flag) {|handler| method(handler) }
+
     create_uiinfo_menus(domain)
     create_tooltips
 
@@ -102,7 +114,11 @@ class FacebuilderGlade
 
     @canvas = @glade['FaceCanvas']
     @face = Face.new(@canvas.root)
-    @face.load("examples/pirate.xml")
+    if $startupfile then
+      @face.load($startupfile)
+    else
+      @face.load("examples/pirate.xml")
+    end
     @canvas.modify_bg(Gtk::STATE_NORMAL, Gdk::Color.new(65535, 65535, 65535))
 
     setup_faceparts()
@@ -488,21 +504,65 @@ class FacebuilderGlade
     }   
   end
 
+  def on_quit
+    Gtk.main_quit
+  end
+
+
   def update_undo()
     @glade['toolbutton_undo'].set_sensitive(@face.has_undo_stack?)
     @glade['toolbutton_redo'].set_sensitive(@face.has_redo_stack?)
   end
 end
 
+def init_command_line()
+  @cmd = CommandLine.new() {
+    name("FaceBuilder 0.1.1")
+    usage("[OPTION]... [FILE]...")
+    description("A little toy application for creating faces.")
+    
+    group("Display")
+    option(?h, "help",       nil,            "Print this help")
+
+    text("Report bugs to <grumbel@gmx.de>.")
+  }
+end
+
+def eval_command_line(argv)
+  begin
+    args = @cmd.parse(argv)
+  rescue CommandLineException => err
+    puts('FaceBuilder:' + err)
+    exit()
+  end
+
+  args.each { |option, argument|
+    case option
+    when ?h
+      @cmd.print_help()
+      @cmd.exit()
+      exit()
+
+    when :rest
+      $startupfile = argument
+
+    else
+      raise "Bug: Unhandled option: -#{option} #{argument}"
+    end
+  }
+end
+
+
 # Main program
 if __FILE__ == $0
+  init_command_line()
+  eval_command_line(ARGV)
+
   # Set values as your own application. 
   PROG_PATH = "facebuilder.glade"
   PROG_NAME = "FaceBuilder"
   PROG_VERSION = "0.1.0"
   Gnome::Program.new(PROG_NAME, PROG_VERSION)
-  #If you use Ruby/GTK2 widgets only, call Gtk.init not Gnome::Program.new here.
-  #Gtk.init
   $facebuilder = FacebuilderGlade.new(PROG_PATH, nil, PROG_NAME)
   Gtk.main
 end

@@ -359,6 +359,13 @@ EOF
   def load(filename)
     file = File.new( filename )
     doc = REXML::Document.new(file)
+    @parts.each { |key, part|
+      part.rotation = 0.0
+      part.scale    = 1.0
+      part.filename = nil
+      part.offset   = Point.new(0, 0)
+    }
+
     doc.elements.each("face/*") { |element|
       part = element.name.to_sym
       @parts[part].rotation = element.elements['rotation'].text.to_f
