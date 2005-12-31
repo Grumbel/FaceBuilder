@@ -37,8 +37,8 @@ class FacebuilderGlade
     uiinfos[5][9]  = @glade['copy1']
     uiinfos[6][9]  = @glade['paste1']
     uiinfos[7][9]  = @glade['properties1']
-    uiinfos[8][9] = @glade['preferences1']
-    uiinfos[9][9] = @glade['about1']
+    uiinfos[8][9]  = @glade['preferences1']
+    uiinfos[9][9]  = @glade['about1']
     @app.install_menu_hints(uiinfos)
   end
 
@@ -102,7 +102,27 @@ class FacebuilderGlade
     }      
   end
 
+  def create_directory(name)
+    if ! File.directory?(name) then
+      puts "Creating #{@dot_directory}..."
+      Dir.mkdir(name)
+    end
+  end
+
+  def create_dot_directory()
+    @dot_directory = ENV["HOME"] + "/.facebuilder"
+    create_directory(@dot_directory)
+    create_directory(@dot_directory + "/data")
+    create_directory(@dot_directory + "/thumbnails")
+    ["beard", "eyebrow", "glasses", "hat", "mouthfold",
+     "ear", "eye", "forehead", "hair", "head", "mouth", "nose"].each { |sub|
+      create_directory(@dot_directory + "/data/" + sub)
+    }
+  end
+
   def initialize(path_or_data, root = nil, domain = nil, localedir = nil, flag = GladeXML::FILE)
+    create_dot_directory()
+
     @glade = GladeXML.new(path_or_data, root, domain, localedir, flag) {|handler| method(handler) }
 
     create_uiinfo_menus(domain)
@@ -228,6 +248,10 @@ class FacebuilderGlade
     update_undo()
   end
   
+  def on_center_face1_activate(widget)
+    @face.center()
+  end
+
   def on_open1_activate(widget)
     dialog =  Gtk::FileChooserDialog.new("Gtk::FileChooser sample", nil,
                                          Gtk::FileChooser::ACTION_OPEN,
@@ -288,7 +312,6 @@ class FacebuilderGlade
     clipboard.request_contents(Gdk::Atom.intern("CLIPBOARD", false)) { |clipboard, selection_data| 
       puts selection_data.type, selection_data.text
     }
-
   end
 
   def on_save_as1_activate(widget)
@@ -378,7 +401,7 @@ class FacebuilderGlade
                               :size_pixels => FALSE})
     left.show()
     left.signal_connect("clicked") {
-      @face.get_part(facepart).previous_item()
+      @face.get_part(facepart).next_item(-1)
       set_current_part(facepart)
     }
 
@@ -453,12 +476,31 @@ class FacebuilderGlade
     }
   end
 
+  def store_thumbnail(pixmap, orig_filename)
+    filename = orig_filename.gsub("/", "_").gsub(".", "+")
+    filename = @dot_directory + "/thumbnails/" + "thumb0_" + filename + ".png"
+    pixmap.save(filename, "png")
+    File.utime(0, File.mtime(orig_filename), filename)
+  end
+
+  def load_thumbnail(orig_filename)
+    filename = orig_filename.gsub("/", "_").gsub(".", "+")
+    filename = @dot_directory + "/thumbnails/" + "thumb0_" + filename + ".png"
+    if File.exists? filename and File.mtime(orig_filename) == File.mtime(filename) then
+        return Gdk::Pixbuf.new(filename)
+    else
+      return nil
+    end
+  end
+
   def set_current_part(type)
     @parts.each_with_index() { |p, i|
       if type == p then
         @glade['PartSelector'].active = i
 
         if @current_part != i then
+          @current_part = i
+
           @list.clear()
 
           # Add empty item
@@ -467,38 +509,52 @@ class FacebuilderGlade
           iter[1] = Gdk::Pixbuf.new('data/empty.png')
 
           # Add other items
+          i = 0
           Dir.new("data/#{type}/").grep(/\.png$/).each{|v|
             filename = "data/#{type}/#{v}"
             iter = @list.append()
-            pixbuf = Gdk::Pixbuf.new(filename)
-
-            # scale, while keeping aspect
-            if pixbuf.width > 64 or pixbuf.height > 64 then # need scaling, since larger then 64x64
-              aspect = pixbuf.width.to_f / pixbuf.height
-              if pixbuf.width > pixbuf.height then
-                pixbuf = pixbuf.scale(64, 64 / aspect)
-              else
-                pixbuf = pixbuf.scale(64 * aspect, 64)
+            
+            pixbuf = load_thumbnail(filename)
+            if ! pixbuf then
+              pixbuf = Gdk::Pixbuf.new(filename)
+              
+              # scale, while keeping aspect
+              if pixbuf.width > 64 or pixbuf.height > 64 then # need scaling, since larger then 64x64
+                aspect = pixbuf.width.to_f / pixbuf.height
+                if pixbuf.width > pixbuf.height then
+                  pixbuf = pixbuf.scale(64, 64 / aspect)
+                else
+                  pixbuf = pixbuf.scale(64 * aspect, 64)
+                end
               end
+
+              whitepixbuf = Gdk::Pixbuf.new(Gdk::Pixbuf::COLORSPACE_RGB, true, 8, 64, 64)
+              whitepixbuf.fill!(0xf5f5f5ff)
+
+              whitepixbuf.composite!(pixbuf, 
+                                     (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
+                                     pixbuf.width, pixbuf.height,
+                                     (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
+                                     1.0, 1.0,
+                                     Gdk::Pixbuf::INTERP_BILINEAR,
+                                     255)            
+              pixbuf = whitepixbuf
+              store_thumbnail(pixbuf, filename)              
             end
 
-            whitepixbuf = Gdk::Pixbuf.new(Gdk::Pixbuf::COLORSPACE_RGB, true, 8, 64, 64)
-            whitepixbuf.fill!(0xf5f5f5ff)
-
-            whitepixbuf.composite!(pixbuf, 
-                                   (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
-                                   pixbuf.width, pixbuf.height,
-                                   (whitepixbuf.width - pixbuf.width)/2, (whitepixbuf.height - pixbuf.height)/2,
-                                   1.0, 1.0,
-                                   Gdk::Pixbuf::INTERP_BILINEAR,
-                                   255)            
-
             # Add keep of aspect ratio
-            iter[1] = whitepixbuf
+            iter[1] = pixbuf
             iter[0] = filename
-          }
 
-          @current_part = i
+            if filename == @face.get_part(@parts[@current_part]).filename then
+              # FIXME: Doesn't handle keyboard focus correctly
+              @glade['FaceParts'].select_path(Gtk::TreePath.new((i+1).to_s))
+              # puts @glade['FaceParts'].methods().grep(/cursor/)
+              # @glade['FaceParts'].move_cursor(Gtk::MOVEMENT_LOGICAL_POSITIONS, i+1)
+            end
+
+            i += 1
+          }
         end       
       end
     }   

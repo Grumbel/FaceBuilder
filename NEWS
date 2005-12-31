@@ -9,6 +9,7 @@ FaceBuilder 0.1.1
 * new buttons to center horizontal and vertical
 * fixed loading
 * quit properly when window close button is pressed
+* face part thumbnails are now cached
 
 
 FaceBuilder 0.1.0
