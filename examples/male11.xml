@@ -1,62 +1,56 @@
 <face>
-  <forehead>
-    <filename>data/forehead/0000.png</filename>
-    <offset><x>0</x><y>-60.0</y></offset>
-    <scale>1.0</scale>
-    <rotation>0.0</rotation>
-  </forehead>
-  <mouth>
-    <filename>data/mouth/0009.png</filename>
-    <offset><x>0.0</x><y>73.0</y></offset>
-    <scale>0.804263039093289</scale>
-    <rotation>0.0</rotation>
-  </mouth>
-  <hair>
-    <filename>data/hair/0028.png</filename>
-    <offset><x>1.0</x><y>3.0</y></offset>
-    <scale>0.743014729988519</scale>
-    <rotation>0.0</rotation>
-  </hair>
-  <mouthfold>
-    <filename>data/mouthfold/0000.png</filename>
-    <offset><x>30</x><y>67.0</y></offset>
-    <scale>1.0</scale>
-    <rotation>0.0</rotation>
-  </mouthfold>
-  <eye>
-    <filename>data/eye/0005.png</filename>
-    <offset><x>33.0</x><y>-7.0</y></offset>
-    <scale>1.0</scale>
-    <rotation>0.0</rotation>
-  </eye>
-  <eyebrow>
-    <filename>data/eyebrow/0005.png</filename>
-    <offset><x>37.0</x><y>-28.0</y></offset>
-    <scale>1.0404</scale>
-    <rotation>0.0</rotation>
-  </eyebrow>
-  <nose>
-    <filename>data/nose/0010.png</filename>
-    <offset><x>0.0</x><y>20.0</y></offset>
-    <scale>1.061208</scale>
-    <rotation>0</rotation>
-  </nose>
-  <glasses>
-    <filename>data/glasses/0010.png</filename>
-    <offset><x>1.0</x><y>-2.0</y></offset>
-    <scale>1.0</scale>
-    <rotation>0.0</rotation>
-  </glasses>
   <head>
-    <filename>data/head/0013.png</filename>
-    <offset><x>0</x><y>0.0</y></offset>
+    <filename>data/head/0016.png</filename>
+    <offset><x>-1.0</x><y>-4.0</y></offset>
     <scale>0.942322334547044</scale>
     <rotation>0.0</rotation>
   </head>
   <ear>
     <filename>data/ear/0001.png</filename>
-    <offset><x>84.0</x><y>15.0</y></offset>
+    <offset><x>79.0</x><y>20.0</y></offset>
+    <scale>1.0</scale>
+    <rotation>0.0</rotation>
+  </ear>
+  <forehead>
+    <filename>data/forehead/0000.png</filename>
+    <offset><x>-1</x><y>-62</y></offset>
+    <scale>1.0</scale>
+    <rotation>0.0</rotation>
+  </forehead>
+  <mouth>
+    <filename>data/mouth/0010.png</filename>
+    <offset><x>1.0</x><y>76.0</y></offset>
     <scale>1.0</scale>
     <rotation>0</rotation>
-  </ear>
+  </mouth>
+  <hair>
+    <filename>data/hair/0029.png</filename>
+    <offset><x>0</x><y>6.0</y></offset>
+    <scale>0.743014729988519</scale>
+    <rotation>0</rotation>
+  </hair>
+  <mouthfold>
+    <filename>data/mouthfold/0000.png</filename>
+    <offset><x>29</x><y>70</y></offset>
+    <scale>1.0</scale>
+    <rotation>0.0</rotation>
+  </mouthfold>
+  <eye>
+    <filename>data/eye/0017.png</filename>
+    <offset><x>32.0</x><y>-2.0</y></offset>
+    <scale>0.923845426026514</scale>
+    <rotation>0</rotation>
+  </eye>
+  <eyebrow>
+    <filename>data/eyebrow/0001.png</filename>
+    <offset><x>37.0</x><y>-25.0</y></offset>
+    <scale>1.0404</scale>
+    <rotation>0.0</rotation>
+  </eyebrow>
+  <nose>
+    <filename>data/nose/0009.png</filename>
+    <offset><x>0.0</x><y>25.0</y></offset>
+    <scale>0.905730809829916</scale>
+    <rotation>0.0</rotation>
+  </nose>
 </face>
