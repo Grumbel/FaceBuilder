@@ -103,7 +103,10 @@ class FacePart
     pathname = "data/" + type.to_s + "/"
     files = Dir.new(pathname).to_a[2..-1].grep(/\.png$/)
     
-    file = File::basename(@filename)
+    if @filename then 
+      file = File::basename(@filename)
+    end
+
     index = 0
 
     files.each_with_index { |obj, i|
