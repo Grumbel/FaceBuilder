@@ -36,3 +36,8 @@ Customizations
 If you want to customize this programm just add new face parts to
 `data/$FACEPART/`, the programm should be able to find them
 automatically then.
+
+Screenshots
+-----------
+
+![Screenshot](images/screenshot-0.1.0-1.png)
