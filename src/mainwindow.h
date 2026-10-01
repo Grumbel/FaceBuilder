@@ -14,6 +14,7 @@ class Face;
 class FaceScene;
 class PartBrowser;
 class XmlFaceFormat;
+class CanvasControls;
 class QAction;
 class QGraphicsView;
 class QLabel;
@@ -25,6 +26,9 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(const QString &dataRoot, QWidget *parent = nullptr);
+
+    /** Load a face XML (used at startup and from CLI). */
+    bool loadFaceFile(const QString &path);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -53,6 +57,13 @@ private slots:
     void onRotateRight();
     void onResetProperties();
     void onCenterFace();
+    void onReload();
+    void onNextPartFile();
+    void onPrevPartFile();
+    void onNextCategory();
+    void onPrevCategory();
+    void onToggleCanvasControls(bool on);
+    void onCanvasCycle(PartType type, int delta);
 
 private:
     void createActions();
@@ -76,6 +87,7 @@ private:
     QGraphicsView *m_view = nullptr;
     PartBrowser *m_browser = nullptr;
     XmlFaceFormat *m_format = nullptr;
+    CanvasControls *m_canvasControls = nullptr;
     QLabel *m_statusHelp = nullptr;
     QUndoStack *m_undoStack = nullptr;
     PartType m_currentType = PartType::Eye;
@@ -100,6 +112,8 @@ private:
     QAction *m_rotateLeftAct = nullptr;
     QAction *m_rotateRightAct = nullptr;
     QAction *m_resetAct = nullptr;
+    QAction *m_reloadAct = nullptr;
+    QAction *m_showControlsAct = nullptr;
 };
 
 #endif

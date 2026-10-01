@@ -9,6 +9,8 @@
 #include "partbrowser.h"
 #include "xmlfaceformat.h"
 #include "paths.h"
+#include "canvascontrols.h"
+#include "partfiles.h"
 
 #include <QAction>
 #include <QApplication>
@@ -82,6 +84,11 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     const QString pirate = examplesDir() + QStringLiteral("/pirate.xml");
     if (QFile::exists(pirate))
         loadFromPath(pirate);
+}
+
+bool MainWindow::loadFaceFile(const QString &path)
+{
+    return loadFromPath(path);
 }
 
 QString MainWindow::examplesDir() const
@@ -230,12 +237,24 @@ void MainWindow::createActions()
     m_resetAct->setToolTip(tr("Reset scale and rotation"));
     connect(m_resetAct, &QAction::triggered, this, &MainWindow::onResetProperties);
 
+    m_reloadAct = new QAction(themedIcon(QStringLiteral("view-refresh"), QStyle::SP_BrowserReload),
+                              tr("&Reload Images"), this);
+    m_reloadAct->setShortcut(QKeySequence(Qt::Key_R));
+    m_reloadAct->setToolTip(tr("Reload part images from disk"));
+    connect(m_reloadAct, &QAction::triggered, this, &MainWindow::onReload);
+
+    m_showControlsAct = new QAction(tr("Show &Canvas Controls"), this);
+    m_showControlsAct->setCheckable(true);
+    m_showControlsAct->setChecked(false);
+    m_showControlsAct->setToolTip(tr("Show on-canvas previous/next buttons"));
+    connect(m_showControlsAct, &QAction::toggled, this, &MainWindow::onToggleCanvasControls);
+
     // Menus should display icons wherever the style allows.
     for (QAction *a : {
              m_newAct, m_openAct, m_saveAct, m_saveAsAct, m_exportPngAct, m_exportSvgAct,
              m_quitAct, m_undoAct, m_redoAct, m_copyAct, m_pasteAct, m_centerFaceAct,
              m_aboutAct, m_scaleMinusAct, m_scalePlusAct, m_centerHAct, m_centerVAct,
-             m_rotateLeftAct, m_rotateRightAct, m_resetAct}) {
+             m_rotateLeftAct, m_rotateRightAct, m_resetAct, m_reloadAct}) {
         showIconInMenu(a);
     }
 }
@@ -262,6 +281,8 @@ void MainWindow::createMenus()
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(m_centerFaceAct);
+    viewMenu->addAction(m_reloadAct);
+    viewMenu->addAction(m_showControlsAct);
     viewMenu->addSeparator();
     viewMenu->addAction(m_scaleMinusAct);
     viewMenu->addAction(m_scalePlusAct);
@@ -302,6 +323,7 @@ void MainWindow::createToolBar()
     tb->addAction(m_resetAct);
     tb->addSeparator();
     tb->addAction(m_centerFaceAct);
+    tb->addAction(m_reloadAct);
     tb->addAction(m_exportPngAct);
     tb->addAction(m_exportSvgAct);
 }
@@ -330,6 +352,10 @@ void MainWindow::createCentralWidget()
     connect(m_scene, &FaceScene::currentTypeChanged, this, &MainWindow::onSceneTypeChanged);
     connect(m_scene, &FaceScene::partMoved, this, &MainWindow::onPartMoved);
 
+    m_canvasControls = new CanvasControls(m_scene, this);
+    connect(m_canvasControls, &CanvasControls::cyclePart,
+            this, &MainWindow::onCanvasCycle);
+
     layout->addWidget(m_view, 1);
     layout->addWidget(m_browser);
     setCentralWidget(central);
@@ -339,8 +365,8 @@ void MainWindow::createCentralWidget()
 void MainWindow::createStatusBar()
 {
     m_statusHelp = new QLabel(
-        tr("PgUp, PgDown: scale   |   Home, End: rotate   |   "
-           "Cursor keys: move   |   Shift+drag: lock horizontal"));
+        tr("PgUp/Dn: scale  |  Home/End: rotate  |  Arrows: move  |  "
+           "A: next part  |  E/O: category  |  C: center H  |  R: reload"));
     m_statusHelp->setMargin(4);
     statusBar()->addWidget(m_statusHelp, 1);
 }
@@ -556,9 +582,90 @@ void MainWindow::onResetProperties()
     m_undoStack->push(new ResetPartTransformCommand(m_face, m_currentType, p.scale(), p.rotation()));
 }
 
+
+void MainWindow::onReload()
+{
+    m_face->reloadAll();
+    statusBar()->showMessage(tr("Reloaded images from disk"), 2000);
+}
+
+void MainWindow::onNextPartFile()
+{
+    onCanvasCycle(m_currentType, +1);
+}
+
+void MainWindow::onPrevPartFile()
+{
+    onCanvasCycle(m_currentType, -1);
+}
+
+void MainWindow::onNextCategory()
+{
+    const auto order = partTypeSelectorOrder();
+    int idx = order.indexOf(m_currentType);
+    idx = (idx + 1) % order.size();
+    m_browser->setCurrentType(order[idx]);
+    m_scene->setCurrentType(order[idx]);
+    m_currentType = order[idx];
+}
+
+void MainWindow::onPrevCategory()
+{
+    const auto order = partTypeSelectorOrder();
+    int idx = order.indexOf(m_currentType);
+    idx = (idx - 1 + order.size()) % order.size();
+    m_browser->setCurrentType(order[idx]);
+    m_scene->setCurrentType(order[idx]);
+    m_currentType = order[idx];
+}
+
+void MainWindow::onToggleCanvasControls(bool on)
+{
+    if (m_canvasControls)
+        m_canvasControls->setVisible(on);
+}
+
+void MainWindow::onCanvasCycle(PartType type, int delta)
+{
+    const QString cur = m_face->part(type).filename();
+    const QString next = cyclePartFile(m_dataRoot, type, cur, delta);
+    if (next.isEmpty())
+        return;
+    m_undoStack->push(new SetPartFilenameCommand(m_face, type, cur, next));
+    m_scene->setCurrentType(type);
+    m_browser->setCurrentType(type);
+    m_currentType = type;
+}
+
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
+    case Qt::Key_A:
+        onNextPartFile();
+        event->accept();
+        return;
+    case Qt::Key_E:
+        onPrevCategory();
+        event->accept();
+        return;
+    case Qt::Key_O:
+        onNextCategory();
+        event->accept();
+        return;
+    case Qt::Key_C:
+        if (!(event->modifiers() & Qt::ControlModifier)) {
+            onCenterHorizontal();
+            event->accept();
+            return;
+        }
+        break;
+    case Qt::Key_R:
+        if (!(event->modifiers() & Qt::ControlModifier)) {
+            onReload();
+            event->accept();
+            return;
+        }
+        break;
     case Qt::Key_PageUp: {
         const qreal oldS = m_face->part(m_currentType).scale();
         m_undoStack->push(new SetPartScaleCommand(m_face, m_currentType, oldS, oldS * kScaleStep));

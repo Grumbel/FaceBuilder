@@ -85,3 +85,9 @@ void Face::resetPartTransform(PartType t)
     part(t).resetTransform();
     emit partChanged(t);
 }
+
+void Face::reloadAll()
+{
+    for (size_t i = 0; i < static_cast<size_t>(PartType::Count); ++i)
+        emit partChanged(static_cast<PartType>(i));
+}

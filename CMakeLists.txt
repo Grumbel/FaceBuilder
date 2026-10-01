@@ -33,6 +33,10 @@ add_executable(facebuilder
   src/faceexport.h
   src/paths.cpp
   src/paths.h
+  src/partfiles.cpp
+  src/partfiles.h
+  src/canvascontrols.cpp
+  src/canvascontrols.h
 )
 
 target_include_directories(facebuilder PRIVATE src)

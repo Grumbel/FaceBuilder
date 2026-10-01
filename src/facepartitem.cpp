@@ -8,6 +8,8 @@
 #include <QGraphicsScene>
 #include <QPen>
 #include <QPixmap>
+#include <QImage>
+#include <QFileInfo>
 #include <QTransform>
 
 FacePartItem::FacePartItem(PartType type, QGraphicsScene *scene, QObject *parent)
@@ -75,7 +77,9 @@ void FacePartItem::updateFrom(const FacePart &part)
         return;
     }
 
-    QPixmap pm(part.filename());
+    // Load via QImage so edited files on disk are picked up (bypass pixmap cache).
+    QImage img(part.filename());
+    QPixmap pm = QPixmap::fromImage(img);
     if (pm.isNull()) {
         m_primary->setVisible(false);
         if (m_mirror) m_mirror->setVisible(false);

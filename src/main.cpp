@@ -6,11 +6,12 @@
 #include "paths.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
+#include <QFile>
 #include <QGuiApplication>
 
 int main(int argc, char *argv[])
 {
-    // Qt6 enables high-DPI scaling by default; keep pixmaps crisp.
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
@@ -20,7 +21,21 @@ int main(int argc, char *argv[])
     QApplication::setOrganizationName(QStringLiteral("FaceBuilder"));
     QApplication::setDesktopFileName(QStringLiteral("facebuilder"));
 
+    QCommandLineParser parser;
+    parser.setApplicationDescription(QStringLiteral("Compose faces from parts"));
+    parser.addHelpOption();
+    parser.addVersionOption();
+    parser.addPositionalArgument(QStringLiteral("file"),
+                                 QStringLiteral("Face XML to open"),
+                                 QStringLiteral("[file]"));
+    parser.process(app);
+
     MainWindow window(findDataRoot());
+
+    const QStringList pos = parser.positionalArguments();
+    if (!pos.isEmpty() && QFile::exists(pos.first()))
+        window.loadFaceFile(pos.first());
+
     window.show();
     return app.exec();
 }

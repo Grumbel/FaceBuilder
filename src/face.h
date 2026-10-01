@@ -37,6 +37,9 @@ public:
     void setPartRotation(PartType t, qreal degrees);
     void resetPartTransform(PartType t);
 
+    /** Re-emit partChanged for all slots so graphics re-read PNGs from disk. */
+    void reloadAll();
+
 signals:
     void partChanged(PartType type);
 
