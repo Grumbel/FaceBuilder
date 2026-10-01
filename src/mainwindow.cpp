@@ -147,12 +147,12 @@ void MainWindow::createActions()
     m_saveAsAct->setToolTip(tr("Save As"));
     connect(m_saveAsAct, &QAction::triggered, this, &MainWindow::onSaveAs);
 
-    m_exportPngAct = new QAction(themedIcon(QStringLiteral("image-x-generic"), QStyle::SP_DesktopIcon),
+    m_exportPngAct = new QAction(loadToolIcon(QStringLiteral("icon_export_png.png")),
                                  tr("Export &PNG..."), this);
     m_exportPngAct->setToolTip(tr("Export as PNG"));
     connect(m_exportPngAct, &QAction::triggered, this, &MainWindow::onExportPng);
 
-    m_exportSvgAct = new QAction(themedIcon(QStringLiteral("image-x-generic"), QStyle::SP_FileDialogListView),
+    m_exportSvgAct = new QAction(loadToolIcon(QStringLiteral("icon_export_svg.png")),
                                  tr("Export SV&G..."), this);
     m_exportSvgAct->setToolTip(tr("Export as SVG"));
     connect(m_exportSvgAct, &QAction::triggered, this, &MainWindow::onExportSvg);
