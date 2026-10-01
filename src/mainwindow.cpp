@@ -64,17 +64,20 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     createCentralWidget();
     createStatusBar();
 
-    // Application icon (installed or from resources next to data)
+    // Application icon: prefer the head-only facebuilder.png, never the text logo.
     {
         const QStringList iconCands = {
-            m_dataRoot + QStringLiteral("/logo.png"),
-            QCoreApplication::applicationDirPath() + QStringLiteral("/../share/icons/hicolor/256x256/apps/facebuilder.png"),
             QCoreApplication::applicationDirPath() + QStringLiteral("/../resources/icons/facebuilder.png"),
+            QCoreApplication::applicationDirPath() + QStringLiteral("/../share/icons/hicolor/256x256/apps/facebuilder.png"),
+            QCoreApplication::applicationDirPath() + QStringLiteral("/../share/facebuilder/icons/facebuilder.png"),
+            m_dataRoot + QStringLiteral("/../resources/icons/facebuilder.png"),
             QStringLiteral("resources/icons/facebuilder.png"),
         };
         for (const QString &p : iconCands) {
             if (QFile::exists(p)) {
-                setWindowIcon(QIcon(p));
+                const QIcon icon(p);
+                setWindowIcon(icon);
+                QApplication::setWindowIcon(icon);
                 break;
             }
         }
@@ -478,9 +481,18 @@ void MainWindow::onAbout()
                    "<p>C++/Qt6 rewrite of the original Ruby + GnomeCanvas application "
                    "by Ingo Ruhnke.</p>"
                    "<p>License: GPLv3+</p>"));
-    const QString logo = m_dataRoot + QStringLiteral("/logo.png");
-    if (QFile::exists(logo))
-        box.setIconPixmap(QPixmap(logo).scaledToWidth(200, Qt::SmoothTransformation));
+    const QStringList aboutIcons = {
+        QCoreApplication::applicationDirPath() + QStringLiteral("/../resources/icons/facebuilder-512.png"),
+        QCoreApplication::applicationDirPath() + QStringLiteral("/../resources/icons/facebuilder.png"),
+        m_dataRoot + QStringLiteral("/../resources/icons/facebuilder.png"),
+        QStringLiteral("resources/icons/facebuilder.png"),
+    };
+    for (const QString &p : aboutIcons) {
+        if (QFile::exists(p)) {
+            box.setIconPixmap(QPixmap(p).scaledToWidth(128, Qt::SmoothTransformation));
+            break;
+        }
+    }
     box.exec();
 }
 
