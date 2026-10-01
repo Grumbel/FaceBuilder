@@ -12,6 +12,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QClipboard>
 #include <QDir>
 #include <QEvent>
 #include <QFile>
@@ -24,6 +25,7 @@
 #include <QLabel>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QStatusBar>
 #include <QStyle>
 #include <QToolBar>
@@ -57,6 +59,22 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     createToolBar();
     createCentralWidget();
     createStatusBar();
+
+    // Application icon (installed or from resources next to data)
+    {
+        const QStringList iconCands = {
+            m_dataRoot + QStringLiteral("/logo.png"),
+            QCoreApplication::applicationDirPath() + QStringLiteral("/../share/icons/hicolor/256x256/apps/facebuilder.png"),
+            QCoreApplication::applicationDirPath() + QStringLiteral("/../resources/icons/facebuilder.png"),
+            QStringLiteral("resources/icons/facebuilder.png"),
+        };
+        for (const QString &p : iconCands) {
+            if (QFile::exists(p)) {
+                setWindowIcon(QIcon(p));
+                break;
+            }
+        }
+    }
 
     // Match original: load pirate example on startup if present.
     const QString pirate = examplesDir() + QStringLiteral("/pirate.xml");
@@ -120,8 +138,10 @@ void MainWindow::createMenus()
     m_redoAct->setShortcut(QKeySequence::Redo);
     editMenu->addAction(m_redoAct);
     editMenu->addSeparator();
-    editMenu->addAction(tr("&Copy"))->setEnabled(false);
-    editMenu->addAction(tr("&Paste"))->setEnabled(false);
+    auto *copyAct = editMenu->addAction(tr("&Copy"), this, &MainWindow::onCopy);
+    copyAct->setShortcut(QKeySequence::Copy);
+    auto *pasteAct = editMenu->addAction(tr("&Paste"), this, &MainWindow::onPaste);
+    pasteAct->setShortcut(QKeySequence::Paste);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(tr("&Center Face"), this, &MainWindow::onCenterFace);
@@ -160,8 +180,10 @@ void MainWindow::createToolBar()
     tb->addAction(m_undoAct);
     tb->addAction(m_redoAct);
     tb->addSeparator();
-    tb->addAction(tr("Copy"))->setEnabled(false);
-    tb->addAction(tr("Paste"))->setEnabled(false);
+    tb->addAction(themedIcon(QStringLiteral("edit-copy"), QStyle::SP_FileDialogDetailedView),
+                  tr("Copy"), this, &MainWindow::onCopy)->setToolTip(tr("Copy face XML"));
+    tb->addAction(themedIcon(QStringLiteral("edit-paste"), QStyle::SP_FileDialogContentsView),
+                  tr("Paste"), this, &MainWindow::onPaste)->setToolTip(tr("Paste face XML"));
     tb->addSeparator();
 
     tb->addAction(loadToolIcon(QStringLiteral("icon_size_minus.png")),
@@ -324,12 +346,43 @@ void MainWindow::onQuit() { QApplication::quit(); }
 
 void MainWindow::onAbout()
 {
-    QMessageBox::about(this, tr("About FaceBuilder"),
-        tr("<h3>FaceBuilder 0.2.0</h3>"
-           "<p>A face-composition toy.</p>"
-           "<p>C++/Qt6 rewrite of the original Ruby + GnomeCanvas application "
-           "by Ingo Ruhnke.</p>"
-           "<p>License: GPLv3+</p>"));
+    QMessageBox box(this);
+    box.setWindowTitle(tr("About FaceBuilder"));
+    box.setTextFormat(Qt::RichText);
+    box.setText(tr("<h3>FaceBuilder 0.2.0</h3>"
+                   "<p>A face-composition toy.</p>"
+                   "<p>C++/Qt6 rewrite of the original Ruby + GnomeCanvas application "
+                   "by Ingo Ruhnke.</p>"
+                   "<p>License: GPLv3+</p>"));
+    const QString logo = m_dataRoot + QStringLiteral("/logo.png");
+    if (QFile::exists(logo))
+        box.setIconPixmap(QPixmap(logo).scaledToWidth(200, Qt::SmoothTransformation));
+    box.exec();
+}
+
+void MainWindow::onCopy()
+{
+    const QString xml = m_format->saveToString(m_face);
+    QApplication::clipboard()->setText(xml);
+    statusBar()->showMessage(tr("Face XML copied to clipboard"), 2000);
+}
+
+void MainWindow::onPaste()
+{
+    const QString xml = QApplication::clipboard()->text();
+    if (xml.trimmed().isEmpty() || !xml.contains(QStringLiteral("<face"))) {
+        QMessageBox::information(this, tr("Paste"),
+                                 tr("Clipboard does not contain FaceBuilder XML."));
+        return;
+    }
+    QString err;
+    if (!m_format->loadFromString(m_face, xml, &err)) {
+        QMessageBox::warning(this, tr("Paste failed"), err);
+        return;
+    }
+    m_undoStack->clear();
+    setCurrentFile({});
+    statusBar()->showMessage(tr("Face pasted from clipboard"), 2000);
 }
 
 void MainWindow::onPartSelected(PartType type, const QString &filename)

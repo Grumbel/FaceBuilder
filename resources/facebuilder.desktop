@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=FaceBuilder
+Comment=Compose faces from parts
+Exec=facebuilder
+Icon=facebuilder
+Categories=Graphics;2DGraphics;
+Terminal=false
+StartupNotify=true

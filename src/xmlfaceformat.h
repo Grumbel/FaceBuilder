@@ -32,6 +32,9 @@ public:
     bool load(Face *face, const QString &filePath, QString *error = nullptr) const;
     bool save(const Face *face, const QString &filePath, QString *error = nullptr) const;
 
+    QString saveToString(const Face *face) const;
+    bool loadFromString(Face *face, const QString &xml, QString *error = nullptr) const;
+
     /** Convert a stored "data/..." path to an absolute filesystem path. */
     QString resolveFilename(const QString &stored) const;
 

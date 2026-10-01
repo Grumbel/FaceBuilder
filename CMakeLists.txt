@@ -49,3 +49,9 @@ install(DIRECTORY data/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/data)
 install(DIRECTORY resources/icons/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/icons)
 # Example faces for Open dialog convenience (optional but useful)
 install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/examples)
+
+install(FILES resources/facebuilder.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES resources/icons/facebuilder.png
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+        RENAME facebuilder.png)

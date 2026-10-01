@@ -39,6 +39,8 @@ private slots:
     void onExportSvg();
     void onQuit();
     void onAbout();
+    void onCopy();
+    void onPaste();
     void onPartSelected(PartType type, const QString &filename);
     void onBrowserTypeChanged(PartType type);
     void onSceneTypeChanged(PartType type);

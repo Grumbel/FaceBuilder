@@ -37,4 +37,4 @@ resources/icons/         # toolbar icons (copied from original + new)
 
 ## Current tip
 
-See TODO.md.
+See TODO.md. Rewrite M1–M5 + desktop/clipboard complete.

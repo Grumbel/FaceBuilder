@@ -11,6 +11,7 @@
 #include <QFileInfo>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include <QBuffer>
 
 XmlFaceFormat::XmlFaceFormat(const QString &dataRoot)
     : m_dataRoot(QDir(dataRoot).absolutePath())
@@ -176,5 +177,113 @@ bool XmlFaceFormat::save(const Face *face, const QString &filePath, QString *err
 
     xml.writeEndElement(); // face
     xml.writeEndDocument();
+    return true;
+}
+
+
+QString XmlFaceFormat::saveToString(const Face *face) const
+{
+    QString out;
+    QXmlStreamWriter xml(&out);
+    xml.setAutoFormatting(true);
+    xml.setAutoFormattingIndent(2);
+    xml.writeStartDocument();
+    xml.writeStartElement(QStringLiteral("face"));
+
+    for (int i = 0; i < static_cast<int>(PartType::Count); ++i) {
+        auto t = static_cast<PartType>(i);
+        const FacePart &p = face->part(t);
+        if (p.filename().isEmpty())
+            continue;
+        xml.writeStartElement(partTypeName(t));
+        xml.writeTextElement(QStringLiteral("filename"), storeFilename(p.filename()));
+        xml.writeStartElement(QStringLiteral("offset"));
+        xml.writeTextElement(QStringLiteral("x"), QString::number(p.offset().x()));
+        xml.writeTextElement(QStringLiteral("y"), QString::number(p.offset().y()));
+        xml.writeEndElement();
+        xml.writeTextElement(QStringLiteral("scale"), QString::number(p.scale(), 'g', 15));
+        xml.writeTextElement(QStringLiteral("rotation"), QString::number(p.rotation(), 'g', 15));
+        xml.writeEndElement();
+    }
+    xml.writeEndElement();
+    xml.writeEndDocument();
+    return out;
+}
+
+bool XmlFaceFormat::loadFromString(Face *face, const QString &xmlText, QString *error) const
+{
+    // Write to a temp path is messy; parse via QXmlStreamReader on a QString.
+    // Reuse load() by writing to a QBuffer-backed flow — simplest: temp file in memory via QBuffer.
+    QByteArray bytes = xmlText.toUtf8();
+    QBuffer buffer(&bytes);
+    buffer.open(QIODevice::ReadOnly);
+
+    face->clearAll();
+
+    QXmlStreamReader xml(&buffer);
+    PartType current = PartType::Count;
+    QString filename;
+    qreal ox = 0, oy = 0, scale = 1.0, rotation = 0.0;
+    bool inOffset = false;
+
+    auto commitPart = [&]() {
+        if (current == PartType::Count)
+            return;
+        const QString abs = resolveFilename(filename);
+        face->setPartFilename(current, abs);
+        face->setPartOffset(current, QPointF(ox, oy));
+        face->setPartScale(current, scale);
+        face->setPartRotation(current, rotation);
+        current = PartType::Count;
+        filename.clear();
+        ox = oy = 0;
+        scale = 1.0;
+        rotation = 0.0;
+    };
+
+    while (!xml.atEnd()) {
+        xml.readNext();
+        if (xml.isStartElement()) {
+            const QString name = xml.name().toString();
+            if (name == QLatin1String("face"))
+                continue;
+            if (name == QLatin1String("filename"))
+                filename = xml.readElementText().trimmed();
+            else if (name == QLatin1String("offset"))
+                inOffset = true;
+            else if (inOffset && name == QLatin1String("x"))
+                ox = xml.readElementText().toDouble();
+            else if (inOffset && name == QLatin1String("y"))
+                oy = xml.readElementText().toDouble();
+            else if (name == QLatin1String("scale"))
+                scale = xml.readElementText().toDouble();
+            else if (name == QLatin1String("rotation"))
+                rotation = xml.readElementText().toDouble();
+            else {
+                for (int i = 0; i < static_cast<int>(PartType::Count); ++i) {
+                    auto t = static_cast<PartType>(i);
+                    if (partTypeName(t) == name) {
+                        current = t;
+                        filename.clear();
+                        ox = oy = 0;
+                        scale = 1.0;
+                        rotation = 0.0;
+                        break;
+                    }
+                }
+            }
+        } else if (xml.isEndElement()) {
+            const QString name = xml.name().toString();
+            if (name == QLatin1String("offset"))
+                inOffset = false;
+            else if (current != PartType::Count && partTypeName(current) == name)
+                commitPart();
+        }
+    }
+    if (xml.hasError()) {
+        if (error)
+            *error = xml.errorString();
+        return false;
+    }
     return true;
 }
