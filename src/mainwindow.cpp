@@ -23,6 +23,7 @@
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPixmap>
@@ -55,6 +56,7 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     m_undoStack = new QUndoStack(this);
     m_format = new XmlFaceFormat(m_dataRoot);
 
+    createActions();
     createMenus();
     createToolBar();
     createCentralWidget();
@@ -112,42 +114,165 @@ void MainWindow::setCurrentFile(const QString &path)
         setWindowTitle(tr("FaceBuilder — %1").arg(QFileInfo(path).fileName()));
 }
 
+void MainWindow::showIconInMenu(QAction *action)
+{
+    if (action)
+        action->setIconVisibleInMenu(true);
+}
+
+void MainWindow::createActions()
+{
+    m_newAct = new QAction(themedIcon(QStringLiteral("document-new"), QStyle::SP_FileIcon),
+                           tr("&New"), this);
+    m_newAct->setShortcut(QKeySequence::New);
+    m_newAct->setToolTip(tr("New face"));
+    connect(m_newAct, &QAction::triggered, this, &MainWindow::onNew);
+
+    m_openAct = new QAction(themedIcon(QStringLiteral("document-open"), QStyle::SP_DirOpenIcon),
+                            tr("&Open..."), this);
+    m_openAct->setShortcut(QKeySequence::Open);
+    m_openAct->setToolTip(tr("Open face XML"));
+    connect(m_openAct, &QAction::triggered, this, &MainWindow::onOpen);
+
+    m_saveAct = new QAction(themedIcon(QStringLiteral("document-save"), QStyle::SP_DialogSaveButton),
+                            tr("&Save"), this);
+    m_saveAct->setShortcut(QKeySequence::Save);
+    m_saveAct->setToolTip(tr("Save"));
+    m_saveAct->setEnabled(false);
+    connect(m_saveAct, &QAction::triggered, this, &MainWindow::onSave);
+
+    m_saveAsAct = new QAction(themedIcon(QStringLiteral("document-save-as"), QStyle::SP_DialogSaveButton),
+                              tr("Save &As..."), this);
+    m_saveAsAct->setShortcut(QKeySequence::SaveAs);
+    m_saveAsAct->setToolTip(tr("Save As"));
+    connect(m_saveAsAct, &QAction::triggered, this, &MainWindow::onSaveAs);
+
+    m_exportPngAct = new QAction(themedIcon(QStringLiteral("image-x-generic"), QStyle::SP_DesktopIcon),
+                                 tr("Export &PNG..."), this);
+    m_exportPngAct->setToolTip(tr("Export as PNG"));
+    connect(m_exportPngAct, &QAction::triggered, this, &MainWindow::onExportPng);
+
+    m_exportSvgAct = new QAction(themedIcon(QStringLiteral("image-x-generic"), QStyle::SP_FileDialogListView),
+                                 tr("Export SV&G..."), this);
+    m_exportSvgAct->setToolTip(tr("Export as SVG"));
+    connect(m_exportSvgAct, &QAction::triggered, this, &MainWindow::onExportSvg);
+
+    m_quitAct = new QAction(themedIcon(QStringLiteral("application-exit"), QStyle::SP_DialogCloseButton),
+                            tr("&Quit"), this);
+    m_quitAct->setShortcut(QKeySequence::Quit);
+    m_quitAct->setToolTip(tr("Quit"));
+    connect(m_quitAct, &QAction::triggered, this, &MainWindow::onQuit);
+
+    m_undoAct = m_undoStack->createUndoAction(this, tr("&Undo"));
+    m_undoAct->setIcon(themedIcon(QStringLiteral("edit-undo"), QStyle::SP_ArrowBack));
+    m_undoAct->setShortcut(QKeySequence::Undo);
+    m_undoAct->setToolTip(tr("Undo"));
+
+    m_redoAct = m_undoStack->createRedoAction(this, tr("&Redo"));
+    m_redoAct->setIcon(themedIcon(QStringLiteral("edit-redo"), QStyle::SP_ArrowForward));
+    m_redoAct->setShortcut(QKeySequence::Redo);
+    m_redoAct->setToolTip(tr("Redo"));
+
+    m_copyAct = new QAction(themedIcon(QStringLiteral("edit-copy"), QStyle::SP_FileDialogDetailedView),
+                            tr("&Copy"), this);
+    m_copyAct->setShortcut(QKeySequence::Copy);
+    m_copyAct->setToolTip(tr("Copy face XML"));
+    connect(m_copyAct, &QAction::triggered, this, &MainWindow::onCopy);
+
+    m_pasteAct = new QAction(themedIcon(QStringLiteral("edit-paste"), QStyle::SP_FileDialogContentsView),
+                             tr("&Paste"), this);
+    m_pasteAct->setShortcut(QKeySequence::Paste);
+    m_pasteAct->setToolTip(tr("Paste face XML"));
+    connect(m_pasteAct, &QAction::triggered, this, &MainWindow::onPaste);
+
+    m_centerFaceAct = new QAction(themedIcon(QStringLiteral("zoom-fit-best"), QStyle::SP_TitleBarMaxButton),
+                                  tr("&Center Face"), this);
+    m_centerFaceAct->setToolTip(tr("Center face on head"));
+    connect(m_centerFaceAct, &QAction::triggered, this, &MainWindow::onCenterFace);
+
+    m_aboutAct = new QAction(themedIcon(QStringLiteral("help-about"), QStyle::SP_MessageBoxInformation),
+                             tr("&About FaceBuilder"), this);
+    m_aboutAct->setToolTip(tr("About FaceBuilder"));
+    connect(m_aboutAct, &QAction::triggered, this, &MainWindow::onAbout);
+
+    m_scaleMinusAct = new QAction(loadToolIcon(QStringLiteral("icon_size_minus.png")),
+                                  tr("Scale -"), this);
+    m_scaleMinusAct->setToolTip(tr("Scale down"));
+    connect(m_scaleMinusAct, &QAction::triggered, this, &MainWindow::onScaleMinus);
+
+    m_scalePlusAct = new QAction(loadToolIcon(QStringLiteral("icon_size_plus.png")),
+                                 tr("Scale +"), this);
+    m_scalePlusAct->setToolTip(tr("Scale up"));
+    connect(m_scalePlusAct, &QAction::triggered, this, &MainWindow::onScalePlus);
+
+    m_centerHAct = new QAction(loadToolIcon(QStringLiteral("icon_center_horizontal.png")),
+                               tr("Center Horizontal"), this);
+    m_centerHAct->setToolTip(tr("Center horizontal"));
+    connect(m_centerHAct, &QAction::triggered, this, &MainWindow::onCenterHorizontal);
+
+    m_centerVAct = new QAction(loadToolIcon(QStringLiteral("icon_center_vertical.png")),
+                               tr("Center Vertical"), this);
+    m_centerVAct->setToolTip(tr("Center vertical"));
+    connect(m_centerVAct, &QAction::triggered, this, &MainWindow::onCenterVertical);
+
+    m_rotateLeftAct = new QAction(loadToolIcon(QStringLiteral("icon_rotate_left.png")),
+                                  tr("Rotate Left"), this);
+    m_rotateLeftAct->setToolTip(tr("Rotate left"));
+    connect(m_rotateLeftAct, &QAction::triggered, this, &MainWindow::onRotateLeft);
+
+    m_rotateRightAct = new QAction(loadToolIcon(QStringLiteral("icon_rotate_right.png")),
+                                   tr("Rotate Right"), this);
+    m_rotateRightAct->setToolTip(tr("Rotate right"));
+    connect(m_rotateRightAct, &QAction::triggered, this, &MainWindow::onRotateRight);
+
+    m_resetAct = new QAction(themedIcon(QStringLiteral("edit-clear"), QStyle::SP_BrowserReload),
+                             tr("Reset"), this);
+    m_resetAct->setToolTip(tr("Reset scale and rotation"));
+    connect(m_resetAct, &QAction::triggered, this, &MainWindow::onResetProperties);
+
+    // Menus should display icons wherever the style allows.
+    for (QAction *a : {
+             m_newAct, m_openAct, m_saveAct, m_saveAsAct, m_exportPngAct, m_exportSvgAct,
+             m_quitAct, m_undoAct, m_redoAct, m_copyAct, m_pasteAct, m_centerFaceAct,
+             m_aboutAct, m_scaleMinusAct, m_scalePlusAct, m_centerHAct, m_centerVAct,
+             m_rotateLeftAct, m_rotateRightAct, m_resetAct}) {
+        showIconInMenu(a);
+    }
+}
+
 void MainWindow::createMenus()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
-    auto *newAct = fileMenu->addAction(tr("&New"), this, &MainWindow::onNew);
-    newAct->setShortcut(QKeySequence::New);
-    fileMenu->addAction(tr("&Open..."), this, &MainWindow::onOpen)->setShortcut(QKeySequence::Open);
-    m_saveAct = fileMenu->addAction(tr("&Save"), this, &MainWindow::onSave);
-    m_saveAct->setShortcut(QKeySequence::Save);
-    m_saveAct->setEnabled(false);
-    fileMenu->addAction(tr("Save &As..."), this, &MainWindow::onSaveAs)
-        ->setShortcut(QKeySequence::SaveAs);
+    fileMenu->addAction(m_newAct);
+    fileMenu->addAction(m_openAct);
+    fileMenu->addAction(m_saveAct);
+    fileMenu->addAction(m_saveAsAct);
     fileMenu->addSeparator();
-    fileMenu->addAction(tr("Export &PNG..."), this, &MainWindow::onExportPng);
-    fileMenu->addAction(tr("Export SV&G..."), this, &MainWindow::onExportSvg);
+    fileMenu->addAction(m_exportPngAct);
+    fileMenu->addAction(m_exportSvgAct);
     fileMenu->addSeparator();
-    auto *quitAct = fileMenu->addAction(tr("&Quit"), this, &MainWindow::onQuit);
-    quitAct->setShortcut(QKeySequence::Quit);
+    fileMenu->addAction(m_quitAct);
 
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    m_undoAct = m_undoStack->createUndoAction(this, tr("&Undo"));
-    m_undoAct->setShortcut(QKeySequence::Undo);
     editMenu->addAction(m_undoAct);
-    m_redoAct = m_undoStack->createRedoAction(this, tr("&Redo"));
-    m_redoAct->setShortcut(QKeySequence::Redo);
     editMenu->addAction(m_redoAct);
     editMenu->addSeparator();
-    auto *copyAct = editMenu->addAction(tr("&Copy"), this, &MainWindow::onCopy);
-    copyAct->setShortcut(QKeySequence::Copy);
-    auto *pasteAct = editMenu->addAction(tr("&Paste"), this, &MainWindow::onPaste);
-    pasteAct->setShortcut(QKeySequence::Paste);
+    editMenu->addAction(m_copyAct);
+    editMenu->addAction(m_pasteAct);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
-    viewMenu->addAction(tr("&Center Face"), this, &MainWindow::onCenterFace);
+    viewMenu->addAction(m_centerFaceAct);
+    viewMenu->addSeparator();
+    viewMenu->addAction(m_scaleMinusAct);
+    viewMenu->addAction(m_scalePlusAct);
+    viewMenu->addAction(m_centerHAct);
+    viewMenu->addAction(m_centerVAct);
+    viewMenu->addAction(m_rotateLeftAct);
+    viewMenu->addAction(m_rotateRightAct);
+    viewMenu->addAction(m_resetAct);
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(tr("&About FaceBuilder"), this, &MainWindow::onAbout);
+    helpMenu->addAction(m_aboutAct);
 }
 
 void MainWindow::createToolBar()
@@ -155,57 +280,30 @@ void MainWindow::createToolBar()
     QToolBar *tb = addToolBar(tr("Main"));
     tb->setMovable(false);
     tb->setIconSize(QSize(24, 24));
+    tb->setToolButtonStyle(Qt::ToolButtonIconOnly);
 
-    {
-        auto *a = tb->addAction(themedIcon(QStringLiteral("document-new"), QStyle::SP_FileIcon),
-                                tr("New"), this, &MainWindow::onNew);
-        a->setToolTip(tr("New"));
-    }
-    {
-        auto *a = tb->addAction(themedIcon(QStringLiteral("document-open"), QStyle::SP_DirOpenIcon),
-                                tr("Open"), this, &MainWindow::onOpen);
-        a->setToolTip(tr("Open"));
-    }
-    {
-        auto *a = tb->addAction(themedIcon(QStringLiteral("document-save"), QStyle::SP_DialogSaveButton),
-                                tr("Save"), this, &MainWindow::onSave);
-        a->setToolTip(tr("Save"));
-    }
-    {
-        auto *a = tb->addAction(themedIcon(QStringLiteral("document-save-as"), QStyle::SP_DialogSaveButton),
-                                tr("Save As"), this, &MainWindow::onSaveAs);
-        a->setToolTip(tr("Save As"));
-    }
+    tb->addAction(m_newAct);
+    tb->addAction(m_openAct);
+    tb->addAction(m_saveAct);
+    tb->addAction(m_saveAsAct);
     tb->addSeparator();
     tb->addAction(m_undoAct);
     tb->addAction(m_redoAct);
     tb->addSeparator();
-    tb->addAction(themedIcon(QStringLiteral("edit-copy"), QStyle::SP_FileDialogDetailedView),
-                  tr("Copy"), this, &MainWindow::onCopy)->setToolTip(tr("Copy face XML"));
-    tb->addAction(themedIcon(QStringLiteral("edit-paste"), QStyle::SP_FileDialogContentsView),
-                  tr("Paste"), this, &MainWindow::onPaste)->setToolTip(tr("Paste face XML"));
+    tb->addAction(m_copyAct);
+    tb->addAction(m_pasteAct);
     tb->addSeparator();
-
-    tb->addAction(loadToolIcon(QStringLiteral("icon_size_minus.png")),
-                  tr("Scale -"), this, &MainWindow::onScaleMinus)
-        ->setToolTip(tr("Scale down"));
-    tb->addAction(loadToolIcon(QStringLiteral("icon_size_plus.png")),
-                  tr("Scale +"), this, &MainWindow::onScalePlus)
-        ->setToolTip(tr("Scale up"));
-    tb->addAction(loadToolIcon(QStringLiteral("icon_center_horizontal.png")),
-                  tr("Center H"), this, &MainWindow::onCenterHorizontal)
-        ->setToolTip(tr("Center horizontal"));
-    tb->addAction(loadToolIcon(QStringLiteral("icon_center_vertical.png")),
-                  tr("Center V"), this, &MainWindow::onCenterVertical)
-        ->setToolTip(tr("Center vertical"));
-    tb->addAction(loadToolIcon(QStringLiteral("icon_rotate_left.png")),
-                  tr("Rotate Left"), this, &MainWindow::onRotateLeft)
-        ->setToolTip(tr("Rotate left"));
-    tb->addAction(loadToolIcon(QStringLiteral("icon_rotate_right.png")),
-                  tr("Rotate Right"), this, &MainWindow::onRotateRight)
-        ->setToolTip(tr("Rotate right"));
-    tb->addAction(tr("Reset"), this, &MainWindow::onResetProperties)
-        ->setToolTip(tr("Reset scale and rotation"));
+    tb->addAction(m_scaleMinusAct);
+    tb->addAction(m_scalePlusAct);
+    tb->addAction(m_centerHAct);
+    tb->addAction(m_centerVAct);
+    tb->addAction(m_rotateLeftAct);
+    tb->addAction(m_rotateRightAct);
+    tb->addAction(m_resetAct);
+    tb->addSeparator();
+    tb->addAction(m_centerFaceAct);
+    tb->addAction(m_exportPngAct);
+    tb->addAction(m_exportSvgAct);
 }
 
 void MainWindow::createCentralWidget()

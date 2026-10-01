@@ -55,6 +55,7 @@ private slots:
     void onCenterFace();
 
 private:
+    void createActions();
     void createMenus();
     void createToolBar();
     void createStatusBar();
@@ -64,7 +65,10 @@ private:
     bool saveToPath(const QString &path);
     bool loadFromPath(const QString &path);
     QString examplesDir() const;
-    
+
+    /** Ensure action icon is shown in menus (some styles hide them by default). */
+    static void showIconInMenu(QAction *action);
+
     QString m_dataRoot;
     QString m_currentFile;
     Face *m_face = nullptr;
@@ -75,9 +79,27 @@ private:
     QLabel *m_statusHelp = nullptr;
     QUndoStack *m_undoStack = nullptr;
     PartType m_currentType = PartType::Eye;
+
+    QAction *m_newAct = nullptr;
+    QAction *m_openAct = nullptr;
+    QAction *m_saveAct = nullptr;
+    QAction *m_saveAsAct = nullptr;
+    QAction *m_exportPngAct = nullptr;
+    QAction *m_exportSvgAct = nullptr;
+    QAction *m_quitAct = nullptr;
     QAction *m_undoAct = nullptr;
     QAction *m_redoAct = nullptr;
-    QAction *m_saveAct = nullptr;
+    QAction *m_copyAct = nullptr;
+    QAction *m_pasteAct = nullptr;
+    QAction *m_centerFaceAct = nullptr;
+    QAction *m_aboutAct = nullptr;
+    QAction *m_scaleMinusAct = nullptr;
+    QAction *m_scalePlusAct = nullptr;
+    QAction *m_centerHAct = nullptr;
+    QAction *m_centerVAct = nullptr;
+    QAction *m_rotateLeftAct = nullptr;
+    QAction *m_rotateRightAct = nullptr;
+    QAction *m_resetAct = nullptr;
 };
 
 #endif
