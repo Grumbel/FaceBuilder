@@ -11,21 +11,23 @@
 #include <QImage>
 #include <QFileInfo>
 #include <QTransform>
+#include <Qt>
 
 FacePartItem::FacePartItem(PartType type, QGraphicsScene *scene, QObject *parent)
     : QObject(parent), m_type(type), m_scene(scene)
 {
     m_primary = new QGraphicsPixmapItem();
     m_primary->setTransformationMode(Qt::SmoothTransformation);
-    m_primary->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
+    m_primary->setShapeMode(QGraphicsPixmapItem::MaskShape);
     m_primary->setZValue(partTypeZValue(type));
     m_primary->setVisible(false);
+    m_primary->setAcceptedMouseButtons(Qt::LeftButton);
     m_scene->addItem(m_primary);
 
     if (partTypeIsMirrored(type)) {
         m_mirror = new QGraphicsPixmapItem();
         m_mirror->setTransformationMode(Qt::SmoothTransformation);
-        m_mirror->setShapeMode(QGraphicsPixmapItem::BoundingRectShape);
+        m_mirror->setShapeMode(QGraphicsPixmapItem::MaskShape);
         m_mirror->setZValue(partTypeZValue(type));
         m_mirror->setVisible(false);
         m_scene->addItem(m_mirror);
@@ -36,6 +38,8 @@ FacePartItem::FacePartItem(PartType type, QGraphicsScene *scene, QObject *parent
     m_selRect->setBrush(Qt::NoBrush);
     m_selRect->setZValue(partTypeZValue(type) + 0.5);
     m_selRect->setVisible(false);
+    m_selRect->setAcceptedMouseButtons(Qt::NoButton);
+    m_selRect->setFlag(QGraphicsItem::ItemIsSelectable, false);
     m_scene->addItem(m_selRect);
 }
 

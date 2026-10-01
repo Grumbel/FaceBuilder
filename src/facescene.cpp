@@ -8,6 +8,7 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneMouseEvent>
 #include <QPen>
+#include <QGraphicsProxyWidget>
 
 FaceScene::FaceScene(Face *face, QObject *parent)
     : QGraphicsScene(parent), m_face(face)
@@ -68,7 +69,16 @@ void FaceScene::onPartChanged(PartType type)
 
 void FaceScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+    // Canvas control widgets sit above parts; let them handle the click first.
     if (event->button() == Qt::LeftButton) {
+        const QList<QGraphicsItem *> under = items(event->scenePos());
+        for (QGraphicsItem *it : under) {
+            if (qgraphicsitem_cast<QGraphicsProxyWidget *>(it)) {
+                QGraphicsScene::mousePressEvent(event);
+                return;
+            }
+        }
+
         const PartType hit = partAt(event->scenePos());
         if (hit != PartType::Count) {
             setCurrentType(hit);

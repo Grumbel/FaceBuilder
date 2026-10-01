@@ -57,7 +57,10 @@ void CanvasControls::addPair(PartType type, const QPointF &pos)
     });
 
     auto *proxy = m_scene->addWidget(host);
-    proxy->setZValue(500);
+    proxy->setZValue(10000);
+    proxy->setFlag(QGraphicsItem::ItemIsFocusable, true);
+    // Keep widget size correct; ignore scene scale if view zooms later.
+    proxy->setFlag(QGraphicsItem::ItemIgnoresTransformations, false);
     proxy->setPos(pos.x() - host->sizeHint().width() / 2.0,
                   pos.y() - host->sizeHint().height() / 2.0);
     proxy->setVisible(false);
