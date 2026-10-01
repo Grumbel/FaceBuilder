@@ -31,6 +31,8 @@ add_executable(facebuilder
   src/xmlfaceformat.h
   src/faceexport.cpp
   src/faceexport.h
+  src/paths.cpp
+  src/paths.h
 )
 
 target_include_directories(facebuilder PRIVATE src)

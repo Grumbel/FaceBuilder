@@ -43,6 +43,19 @@ void Face::clearAll()
     }
 }
 
+void Face::centerOnHead()
+{
+    const QPointF head = part(PartType::Head).offset();
+    if (head.isNull())
+        return;
+    for (size_t i = 0; i < static_cast<size_t>(PartType::Count); ++i) {
+        auto t = static_cast<PartType>(i);
+        const QPointF o = m_parts[i].offset();
+        m_parts[i].setOffset(QPointF(o.x() - head.x(), o.y() - head.y()));
+        emit partChanged(t);
+    }
+}
+
 void Face::setPartFilename(PartType t, const QString &path)
 {
     part(t).setFilename(path);

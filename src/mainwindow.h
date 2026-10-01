@@ -50,6 +50,7 @@ private slots:
     void onRotateLeft();
     void onRotateRight();
     void onResetProperties();
+    void onCenterFace();
 
 private:
     void createMenus();
@@ -61,7 +62,7 @@ private:
     bool saveToPath(const QString &path);
     bool loadFromPath(const QString &path);
     QString examplesDir() const;
-
+    
     QString m_dataRoot;
     QString m_currentFile;
     Face *m_face = nullptr;

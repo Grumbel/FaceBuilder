@@ -26,6 +26,9 @@ public:
 
     void clearAll();
 
+    /** Shift all offsets so the head is at the origin (original center()). */
+    void centerOnHead();
+
     /** Assign a PNG to a slot (empty path = hide / none). */
     void setPartFilename(PartType t, const QString &path);
 

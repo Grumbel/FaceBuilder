@@ -9,6 +9,7 @@
 #include <QPointF>
 #include <QString>
 #include <QUndoCommand>
+#include <array>
 
 class Face;
 
@@ -93,3 +94,16 @@ private:
 };
 
 #endif // COMMANDS_H
+
+class CenterFaceCommand : public QUndoCommand
+{
+public:
+    CenterFaceCommand(Face *face, QUndoCommand *parent = nullptr);
+    void undo() override;
+    void redo() override;
+
+private:
+    Face *m_face;
+    std::array<QPointF, static_cast<size_t>(PartType::Count)> m_oldOffsets;
+    std::array<QPointF, static_cast<size_t>(PartType::Count)> m_newOffsets;
+};

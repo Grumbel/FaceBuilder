@@ -57,3 +57,28 @@ void ResetPartTransformCommand::undo()
     m_face->setPartRotation(m_type, m_oldRotation);
 }
 void ResetPartTransformCommand::redo() { m_face->resetPartTransform(m_type); }
+
+CenterFaceCommand::CenterFaceCommand(Face *face, QUndoCommand *parent)
+    : QUndoCommand(parent), m_face(face)
+{
+    setText(QObject::tr("Center face"));
+    const QPointF head = face->part(PartType::Head).offset();
+    for (size_t i = 0; i < static_cast<size_t>(PartType::Count); ++i) {
+        auto t = static_cast<PartType>(i);
+        m_oldOffsets[i] = face->part(t).offset();
+        m_newOffsets[i] = QPointF(m_oldOffsets[i].x() - head.x(),
+                                  m_oldOffsets[i].y() - head.y());
+    }
+}
+
+void CenterFaceCommand::undo()
+{
+    for (size_t i = 0; i < static_cast<size_t>(PartType::Count); ++i)
+        m_face->setPartOffset(static_cast<PartType>(i), m_oldOffsets[i]);
+}
+
+void CenterFaceCommand::redo()
+{
+    for (size_t i = 0; i < static_cast<size_t>(PartType::Count); ++i)
+        m_face->setPartOffset(static_cast<PartType>(i), m_newOffsets[i]);
+}

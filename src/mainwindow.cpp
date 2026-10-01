@@ -8,6 +8,7 @@
 #include "facescene.h"
 #include "partbrowser.h"
 #include "xmlfaceformat.h"
+#include "paths.h"
 
 #include <QAction>
 #include <QApplication>
@@ -24,6 +25,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QStatusBar>
+#include <QStyle>
 #include <QToolBar>
 #include <QUndoStack>
 #include <QWheelEvent>
@@ -31,6 +33,16 @@
 
 static constexpr qreal kScaleStep = 1.02;
 static constexpr qreal kRotateStep = 1.0;
+
+static QIcon themedIcon(const QString &themeName, QStyle::StandardPixmap fallback)
+{
+    QIcon icon = QIcon::fromTheme(themeName);
+    if (icon.isNull())
+        icon = QApplication::style()->standardIcon(fallback);
+    return icon;
+}
+
+
 
 MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     : QMainWindow(parent), m_dataRoot(dataRoot)
@@ -54,8 +66,7 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
 
 QString MainWindow::examplesDir() const
 {
-    // dataRoot is .../data — examples sit next to data/
-    return QDir(m_dataRoot).absoluteFilePath(QStringLiteral("../examples"));
+    return findExamplesDir(m_dataRoot);
 }
 
 QIcon MainWindow::loadToolIcon(const QString &name) const
@@ -112,7 +123,9 @@ void MainWindow::createMenus()
     editMenu->addAction(tr("&Copy"))->setEnabled(false);
     editMenu->addAction(tr("&Paste"))->setEnabled(false);
 
-    menuBar()->addMenu(tr("&View"));
+    QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
+    viewMenu->addAction(tr("&Center Face"), this, &MainWindow::onCenterFace);
+
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(tr("&About FaceBuilder"), this, &MainWindow::onAbout);
 }
@@ -123,10 +136,26 @@ void MainWindow::createToolBar()
     tb->setMovable(false);
     tb->setIconSize(QSize(24, 24));
 
-    tb->addAction(tr("New"), this, &MainWindow::onNew)->setToolTip(tr("New"));
-    tb->addAction(tr("Open"), this, &MainWindow::onOpen)->setToolTip(tr("Open"));
-    tb->addAction(tr("Save"), this, &MainWindow::onSave)->setToolTip(tr("Save"));
-    tb->addAction(tr("Save As"), this, &MainWindow::onSaveAs)->setToolTip(tr("Save As"));
+    {
+        auto *a = tb->addAction(themedIcon(QStringLiteral("document-new"), QStyle::SP_FileIcon),
+                                tr("New"), this, &MainWindow::onNew);
+        a->setToolTip(tr("New"));
+    }
+    {
+        auto *a = tb->addAction(themedIcon(QStringLiteral("document-open"), QStyle::SP_DirOpenIcon),
+                                tr("Open"), this, &MainWindow::onOpen);
+        a->setToolTip(tr("Open"));
+    }
+    {
+        auto *a = tb->addAction(themedIcon(QStringLiteral("document-save"), QStyle::SP_DialogSaveButton),
+                                tr("Save"), this, &MainWindow::onSave);
+        a->setToolTip(tr("Save"));
+    }
+    {
+        auto *a = tb->addAction(themedIcon(QStringLiteral("document-save-as"), QStyle::SP_DialogSaveButton),
+                                tr("Save As"), this, &MainWindow::onSaveAs);
+        a->setToolTip(tr("Save As"));
+    }
     tb->addSeparator();
     tb->addAction(m_undoAct);
     tb->addAction(m_redoAct);
@@ -281,6 +310,14 @@ void MainWindow::onExportSvg()
     QString err;
     if (!FaceExport::toSvg(m_face, path, &err))
         QMessageBox::warning(this, tr("Export failed"), err);
+}
+
+void MainWindow::onCenterFace()
+{
+    const QPointF head = m_face->part(PartType::Head).offset();
+    if (qFuzzyIsNull(head.x()) && qFuzzyIsNull(head.y()))
+        return;
+    m_undoStack->push(new CenterFaceCommand(m_face));
 }
 
 void MainWindow::onQuit() { QApplication::quit(); }
