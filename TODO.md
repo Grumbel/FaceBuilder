@@ -1,27 +1,25 @@
-# FaceBuilder C++/Qt6 rewrite — TODO / handoff
+# FaceBuilder — handoff
 
-## Base
+## Tip
 
-- Effective base: `e3f29e1`
-- Tip: `facebuilder-007.1-desktop-clipboard-e3f29e1.bundle`
+- Bundle base: `e3f29e1`
+- Current tip: cleanup of Ruby/Glade; Qt6 app is the only frontend
 
-## Done
+## Status
 
-- M1–M5: skeleton, model, interaction, persistence, polish
-- Desktop entry + app icon install
-- Copy/Paste face XML on the clipboard
-- About dialog shows logo.png
+Feature parity with the old Ruby app is complete. Obsolete Ruby/GTK
+sources were removed from the tip tree (still in git history).
 
-## Optional / future (old Ruby TODO)
+## Optional later
 
-- More face parts; male/female/comic sets
-- Standardise part origins
+- More face parts / sets (old content wishlist)
+- Standardise part image origins
 - Split hair front/back; clothes
 
-## Build / run
+## Build
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build
+cmake -B build && cmake --build build
 FACEBUILDER_DATA=$PWD/data ./build/facebuilder
-nix build && nix run
+nix run
 ```
