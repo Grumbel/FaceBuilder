@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Ingo Ruhnke <grumbel@gmail.com>
 
 #include "mainwindow.h"
+#include "face.h"
 #include "facescene.h"
+#include "partbrowser.h"
 
 #include <QAction>
 #include <QApplication>
@@ -13,7 +15,6 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QToolBar>
-#include <QVBoxLayout>
 #include <QWidget>
 
 MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
@@ -23,16 +24,12 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     setWindowTitle(tr("FaceBuilder"));
     resize(900, 650);
 
-    createActions();
+    m_face = new Face(this);
+
     createMenus();
     createToolBar();
     createCentralWidget();
     createStatusBar();
-}
-
-void MainWindow::createActions()
-{
-    // Actions are created and owned by the menus/toolbars that use them.
 }
 
 void MainWindow::createMenus()
@@ -41,7 +38,6 @@ void MainWindow::createMenus()
     QAction *newAct = fileMenu->addAction(tr("&New"), this, &MainWindow::onNew);
     newAct->setShortcut(QKeySequence::New);
     fileMenu->addSeparator();
-    // Open / Save placeholders for later milestones
     fileMenu->addAction(tr("&Open..."))->setEnabled(false);
     fileMenu->addAction(tr("&Save"))->setEnabled(false);
     fileMenu->addAction(tr("Save &As..."))->setEnabled(false);
@@ -69,8 +65,6 @@ void MainWindow::createToolBar()
     tb->setMovable(false);
     tb->setIconSize(QSize(24, 24));
 
-    // Placeholders matching the original toolbar order.
-    // Icons will be wired in a later commit once resources are set up.
     auto addPlaceholder = [tb](const QString &tip) {
         QAction *a = tb->addAction(tip);
         a->setEnabled(false);
@@ -104,7 +98,7 @@ void MainWindow::createCentralWidget()
     auto *layout = new QHBoxLayout(central);
     layout->setContentsMargins(4, 4, 4, 4);
 
-    m_scene = new FaceScene(this);
+    m_scene = new FaceScene(m_face, this);
     m_view = new QGraphicsView(m_scene, central);
     m_view->setRenderHint(QPainter::Antialiasing, true);
     m_view->setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -113,14 +107,15 @@ void MainWindow::createCentralWidget()
     m_view->setSceneRect(-256, -256, 512, 512);
     m_view->centerOn(0, 0);
 
-    // Placeholder for the part browser (right side) — filled in M2.
-    auto *browserPlaceholder = new QLabel(tr("Part browser\n(coming in M2)"), central);
-    browserPlaceholder->setAlignment(Qt::AlignCenter);
-    browserPlaceholder->setMinimumWidth(220);
-    browserPlaceholder->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    m_browser = new PartBrowser(m_dataRoot, central);
+    m_browser->setMinimumWidth(220);
+    connect(m_browser, &PartBrowser::partSelected,
+            this, &MainWindow::onPartSelected);
+    connect(m_browser, &PartBrowser::currentTypeChanged,
+            this, &MainWindow::onCurrentTypeChanged);
 
     layout->addWidget(m_view, /*stretch=*/1);
-    layout->addWidget(browserPlaceholder);
+    layout->addWidget(m_browser);
 
     setCentralWidget(central);
 }
@@ -136,9 +131,7 @@ void MainWindow::createStatusBar()
 
 void MainWindow::onNew()
 {
-    // M1: just clear the scene; real face reset comes later.
-    m_scene->clear();
-    m_scene->addGuideFrame();
+    m_scene->clearFace();
 }
 
 void MainWindow::onQuit()
@@ -154,4 +147,14 @@ void MainWindow::onAbout()
            "<p>C++/Qt6 rewrite of the original Ruby + GnomeCanvas application "
            "by Ingo Ruhnke.</p>"
            "<p>License: GPLv3+</p>"));
+}
+
+void MainWindow::onPartSelected(PartType type, const QString &filename)
+{
+    m_face->setPartFilename(type, filename);
+}
+
+void MainWindow::onCurrentTypeChanged(PartType type)
+{
+    m_currentType = type;
 }

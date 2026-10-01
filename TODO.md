@@ -3,8 +3,8 @@
 ## Base
 
 - Original tip / work-line base: `3a83ba979d9a3e63ccfcd88a36b7a6074a00889d` (`3a83ba9`)
-- Current tip: `0b11a45` (M1 skeleton)
-- Next bundle: `facebuilder-001.1-qt6-skeleton-3a83ba9.bundle`
+- Current tip: (see git log)
+- Next bundle: `facebuilder-002.1-model-browser-3a83ba9.bundle`
 
 ## Confirmed decisions (2026-10-01)
 
@@ -14,38 +14,21 @@
 4. Linux only for v1
 5. Feature parity with the original first; no new features yet
 
-## UI reference
-
-Original layout (from screenshot + glade):
-
-- Menu bar: File, Edit, View, Help
-- Toolbar: New, Open, Save, Save As, Undo, Redo, Copy, Paste,
-  Scale−, Scale+, Center H, Center V, Rotate L, Rotate R, Reset properties
-- Central: QGraphicsView (white 512×512-ish canvas) | Part browser (category combo + icon grid with “none” = red X)
-- Status bar: keyboard help (PgUp/PgDown scale, Home/End rotate, cursors move, …)
-
 ## Milestones
 
 ### M1 — Skeleton ✅
-- [x] CMake + Qt6 project builds
-- [x] MainWindow with menus + empty toolbar placeholders
-- [x] QGraphicsView showing a white scene (512×512)
-- [x] Basic New / Quit / About
-- [x] Copy original toolbar icons into `resources/icons/`
-- [x] AGENTS.md / TODO.md present
-- [x] README updated for the rewrite
+### M2 — Model + display parts ✅
+- [x] Face / FacePart model
+- [x] Load PNGs from `data/<category>/`
+- [x] FacePartItem on the scene (incl. left/right mirroring)
+- [x] Part browser: category combo + thumbnail grid + “none” (red X)
 
-### M2 — Model + display parts (next)
-- [ ] Face / FacePart model
-- [ ] Load PNGs from `data/<category>/`
-- [ ] FacePartItem on the scene at default offsets
-- [ ] Part browser lists categories + thumbnails (incl. “none”)
-
-### M3 — Interaction
-- [ ] Select part, drag to move
+### M3 — Interaction (next)
+- [ ] Select part on canvas, drag to move
 - [ ] Scale / rotate via toolbar, keys, wheel
 - [ ] Center H/V, reset
 - [ ] QUndoStack for undo/redo
+- [ ] Wire toolbar buttons to the current part
 
 ### M4 — Persistence
 - [ ] XML load/save (old format, examples/*.xml)
@@ -54,11 +37,8 @@ Original layout (from screenshot + glade):
 
 ### M5 — Polish
 - [ ] Keyboard shortcuts match original
-- [ ] Wire real toolbar icons
-- [ ] Status bar help text (done)
-- [ ] About dialog (done)
-- [ ] HiDPI
-- [ ] Packaging notes (Flatpak later)
+- [ ] Real toolbar icons
+- [ ] HiDPI / packaging notes
 
 ## Build / run
 
@@ -68,8 +48,12 @@ cmake --build build
 FACEBUILDER_DATA=$PWD/data ./build/facebuilder
 ```
 
+Pick a category on the right, click a thumbnail — the part appears on the canvas.
+Click the red X to clear that slot. File → New clears everything.
+
 ## Notes for next agent
 
-- Work tree: `/tmp/facebuilder-cpp` or a clone from the tip bundle.
-- Old Ruby sources are still present for reference; do not delete until M4 is solid.
-- After the next tip, produce a cumulative bundle from base `3a83ba9`.
+- Work tree from the tip bundle; base remains `3a83ba9`.
+- Old Ruby sources still present for reference.
+- Mirrored types: eye, ear, eyebrow, mouthfold (FacePartItem draws a second flipped item).
+- Transform order matches original Art::Affine chain.

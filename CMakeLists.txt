@@ -16,14 +16,23 @@ add_executable(facebuilder
   src/mainwindow.h
   src/facescene.cpp
   src/facescene.h
+  src/face.cpp
+  src/face.h
+  src/facepart.cpp
+  src/facepart.h
+  src/facepartitem.cpp
+  src/facepartitem.h
+  src/partbrowser.cpp
+  src/partbrowser.h
+  src/parttypes.h
 )
+
+target_include_directories(facebuilder PRIVATE src)
 
 target_link_libraries(facebuilder PRIVATE
   Qt6::Widgets
   Qt6::Svg
 )
 
-# Install data next to the binary for development runs; later packaging can relocate.
-# For now we rely on running from the build tree or setting FACEBUILDER_DATA.
 install(TARGETS facebuilder RUNTIME DESTINATION bin)
 install(DIRECTORY data/ DESTINATION share/facebuilder/data)
