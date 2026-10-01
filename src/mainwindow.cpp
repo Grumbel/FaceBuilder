@@ -4,14 +4,18 @@
 #include "mainwindow.h"
 #include "commands.h"
 #include "face.h"
+#include "faceexport.h"
 #include "facescene.h"
 #include "partbrowser.h"
+#include "xmlfaceformat.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QDir>
-#include <QFile>
 #include <QEvent>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -35,10 +39,23 @@ MainWindow::MainWindow(const QString &dataRoot, QWidget *parent)
     resize(900, 650);
     m_face = new Face(this);
     m_undoStack = new QUndoStack(this);
+    m_format = new XmlFaceFormat(m_dataRoot);
+
     createMenus();
     createToolBar();
     createCentralWidget();
     createStatusBar();
+
+    // Match original: load pirate example on startup if present.
+    const QString pirate = examplesDir() + QStringLiteral("/pirate.xml");
+    if (QFile::exists(pirate))
+        loadFromPath(pirate);
+}
+
+QString MainWindow::examplesDir() const
+{
+    // dataRoot is .../data — examples sit next to data/
+    return QDir(m_dataRoot).absoluteFilePath(QStringLiteral("../examples"));
 }
 
 QIcon MainWindow::loadToolIcon(const QString &name) const
@@ -56,15 +73,30 @@ QIcon MainWindow::loadToolIcon(const QString &name) const
     return {};
 }
 
+void MainWindow::setCurrentFile(const QString &path)
+{
+    m_currentFile = path;
+    m_saveAct->setEnabled(!path.isEmpty());
+    if (path.isEmpty())
+        setWindowTitle(tr("FaceBuilder"));
+    else
+        setWindowTitle(tr("FaceBuilder — %1").arg(QFileInfo(path).fileName()));
+}
+
 void MainWindow::createMenus()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     auto *newAct = fileMenu->addAction(tr("&New"), this, &MainWindow::onNew);
     newAct->setShortcut(QKeySequence::New);
+    fileMenu->addAction(tr("&Open..."), this, &MainWindow::onOpen)->setShortcut(QKeySequence::Open);
+    m_saveAct = fileMenu->addAction(tr("&Save"), this, &MainWindow::onSave);
+    m_saveAct->setShortcut(QKeySequence::Save);
+    m_saveAct->setEnabled(false);
+    fileMenu->addAction(tr("Save &As..."), this, &MainWindow::onSaveAs)
+        ->setShortcut(QKeySequence::SaveAs);
     fileMenu->addSeparator();
-    fileMenu->addAction(tr("&Open..."))->setEnabled(false);
-    fileMenu->addAction(tr("&Save"))->setEnabled(false);
-    fileMenu->addAction(tr("Save &As..."))->setEnabled(false);
+    fileMenu->addAction(tr("Export &PNG..."), this, &MainWindow::onExportPng);
+    fileMenu->addAction(tr("Export SV&G..."), this, &MainWindow::onExportSvg);
     fileMenu->addSeparator();
     auto *quitAct = fileMenu->addAction(tr("&Quit"), this, &MainWindow::onQuit);
     quitAct->setShortcut(QKeySequence::Quit);
@@ -92,9 +124,9 @@ void MainWindow::createToolBar()
     tb->setIconSize(QSize(24, 24));
 
     tb->addAction(tr("New"), this, &MainWindow::onNew)->setToolTip(tr("New"));
-    tb->addAction(tr("Open"))->setEnabled(false);
-    tb->addAction(tr("Save"))->setEnabled(false);
-    tb->addAction(tr("Save As"))->setEnabled(false);
+    tb->addAction(tr("Open"), this, &MainWindow::onOpen)->setToolTip(tr("Open"));
+    tb->addAction(tr("Save"), this, &MainWindow::onSave)->setToolTip(tr("Save"));
+    tb->addAction(tr("Save As"), this, &MainWindow::onSaveAs)->setToolTip(tr("Save As"));
     tb->addSeparator();
     tb->addAction(m_undoAct);
     tb->addAction(m_redoAct);
@@ -164,10 +196,91 @@ void MainWindow::createStatusBar()
     statusBar()->addWidget(m_statusHelp, 1);
 }
 
+bool MainWindow::loadFromPath(const QString &path)
+{
+    QString err;
+    if (!m_format->load(m_face, path, &err)) {
+        QMessageBox::warning(this, tr("Open failed"), err);
+        return false;
+    }
+    m_undoStack->clear();
+    setCurrentFile(path);
+    return true;
+}
+
+bool MainWindow::saveToPath(const QString &path)
+{
+    QString err;
+    if (!m_format->save(m_face, path, &err)) {
+        QMessageBox::warning(this, tr("Save failed"), err);
+        return false;
+    }
+    setCurrentFile(path);
+    return true;
+}
+
 void MainWindow::onNew()
 {
     m_undoStack->clear();
     m_scene->clearFace();
+    setCurrentFile({});
+}
+
+void MainWindow::onOpen()
+{
+    const QString start = m_currentFile.isEmpty() ? examplesDir() : QFileInfo(m_currentFile).path();
+    const QString path = QFileDialog::getOpenFileName(
+        this, tr("Open Face"), start,
+        tr("FaceBuilder XML (*.xml);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    loadFromPath(path);
+}
+
+void MainWindow::onSave()
+{
+    if (m_currentFile.isEmpty()) {
+        onSaveAs();
+        return;
+    }
+    saveToPath(m_currentFile);
+}
+
+void MainWindow::onSaveAs()
+{
+    const QString start = m_currentFile.isEmpty()
+        ? examplesDir() + QStringLiteral("/untitled.xml")
+        : m_currentFile;
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Save Face"), start,
+        tr("FaceBuilder XML (*.xml);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    saveToPath(path);
+}
+
+void MainWindow::onExportPng()
+{
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Export PNG"), QStringLiteral("face.png"),
+        tr("PNG images (*.png);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    QString err;
+    if (!FaceExport::toPng(m_scene, path, &err))
+        QMessageBox::warning(this, tr("Export failed"), err);
+}
+
+void MainWindow::onExportSvg()
+{
+    const QString path = QFileDialog::getSaveFileName(
+        this, tr("Export SVG"), QStringLiteral("face.svg"),
+        tr("SVG images (*.svg);;All files (*)"));
+    if (path.isEmpty())
+        return;
+    QString err;
+    if (!FaceExport::toSvg(m_face, path, &err))
+        QMessageBox::warning(this, tr("Export failed"), err);
 }
 
 void MainWindow::onQuit() { QApplication::quit(); }

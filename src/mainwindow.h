@@ -13,6 +13,7 @@
 class Face;
 class FaceScene;
 class PartBrowser;
+class XmlFaceFormat;
 class QAction;
 class QGraphicsView;
 class QLabel;
@@ -31,6 +32,11 @@ protected:
 
 private slots:
     void onNew();
+    void onOpen();
+    void onSave();
+    void onSaveAs();
+    void onExportPng();
+    void onExportSvg();
     void onQuit();
     void onAbout();
     void onPartSelected(PartType type, const QString &filename);
@@ -51,17 +57,24 @@ private:
     void createStatusBar();
     void createCentralWidget();
     QIcon loadToolIcon(const QString &name) const;
+    void setCurrentFile(const QString &path);
+    bool saveToPath(const QString &path);
+    bool loadFromPath(const QString &path);
+    QString examplesDir() const;
 
     QString m_dataRoot;
+    QString m_currentFile;
     Face *m_face = nullptr;
     FaceScene *m_scene = nullptr;
     QGraphicsView *m_view = nullptr;
     PartBrowser *m_browser = nullptr;
+    XmlFaceFormat *m_format = nullptr;
     QLabel *m_statusHelp = nullptr;
     QUndoStack *m_undoStack = nullptr;
     PartType m_currentType = PartType::Eye;
     QAction *m_undoAct = nullptr;
     QAction *m_redoAct = nullptr;
+    QAction *m_saveAct = nullptr;
 };
 
 #endif

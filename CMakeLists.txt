@@ -27,6 +27,10 @@ add_executable(facebuilder
   src/parttypes.h
   src/commands.cpp
   src/commands.h
+  src/xmlfaceformat.cpp
+  src/xmlfaceformat.h
+  src/faceexport.cpp
+  src/faceexport.h
 )
 
 target_include_directories(facebuilder PRIVATE src)
@@ -41,3 +45,5 @@ include(GNUInstallDirs)
 install(TARGETS facebuilder RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY data/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/data)
 install(DIRECTORY resources/icons/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/icons)
+# Example faces for Open dialog convenience (optional but useful)
+install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/examples)
