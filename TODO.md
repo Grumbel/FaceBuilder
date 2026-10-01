@@ -3,7 +3,8 @@
 ## Base
 
 - Original tip / work-line base: `3a83ba979d9a3e63ccfcd88a36b7a6074a00889d` (`3a83ba9`)
-- Next bundle number: start at `facebuilder-001.…`
+- Current tip: `0b11a45` (M1 skeleton)
+- Next bundle: `facebuilder-001.1-qt6-skeleton-3a83ba9.bundle`
 
 ## Confirmed decisions (2026-10-01)
 
@@ -25,16 +26,16 @@ Original layout (from screenshot + glade):
 
 ## Milestones
 
-### M1 — Skeleton (current focus)
-- [ ] CMake + Qt6 project builds
-- [ ] MainWindow with menus + empty toolbar placeholders
-- [ ] QGraphicsView showing a white scene (512×512)
-- [ ] Basic New / Quit
-- [ ] Copy original toolbar icons into `resources/icons/`
-- [ ] AGENTS.md / TODO.md present
-- [ ] README updated for the rewrite
+### M1 — Skeleton ✅
+- [x] CMake + Qt6 project builds
+- [x] MainWindow with menus + empty toolbar placeholders
+- [x] QGraphicsView showing a white scene (512×512)
+- [x] Basic New / Quit / About
+- [x] Copy original toolbar icons into `resources/icons/`
+- [x] AGENTS.md / TODO.md present
+- [x] README updated for the rewrite
 
-### M2 — Model + display parts
+### M2 — Model + display parts (next)
 - [ ] Face / FacePart model
 - [ ] Load PNGs from `data/<category>/`
 - [ ] FacePartItem on the scene at default offsets
@@ -53,12 +54,22 @@ Original layout (from screenshot + glade):
 
 ### M5 — Polish
 - [ ] Keyboard shortcuts match original
-- [ ] Status bar help text
-- [ ] About dialog, icons, HiDPI
+- [ ] Wire real toolbar icons
+- [ ] Status bar help text (done)
+- [ ] About dialog (done)
+- [ ] HiDPI
 - [ ] Packaging notes (Flatpak later)
+
+## Build / run
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+FACEBUILDER_DATA=$PWD/data ./build/facebuilder
+```
 
 ## Notes for next agent
 
-- Work in `/tmp/facebuilder-cpp` (or a fresh clone from the tip bundle).
-- After each meaningful tip, produce a cumulative git bundle under artifacts.
-- Do not remove the old Ruby sources yet; keep them for reference until M4 is solid.
+- Work tree: `/tmp/facebuilder-cpp` or a clone from the tip bundle.
+- Old Ruby sources are still present for reference; do not delete until M4 is solid.
+- After the next tip, produce a cumulative bundle from base `3a83ba9`.
