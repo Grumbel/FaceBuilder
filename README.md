@@ -8,6 +8,8 @@ you can also export PNG or SVG.
 This is a **C++/Qt6** application (Linux). The original Ruby + GTK +
 GnomeCanvas version lives in the git history if you need it.
 
+![Screenshot](images/screenshot-0.2.0-1.png)
+
 ## Features
 
 - ~100 face parts under `data/` (eyes, hair, hats, …)
