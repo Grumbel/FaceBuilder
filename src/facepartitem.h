@@ -10,13 +10,9 @@
 #include <QObject>
 
 class FacePart;
+class QGraphicsRectItem;
 class QGraphicsScene;
 
-/**
- * Manages one or two QGraphicsPixmapItems for a face-part slot.
- * Mirrored types (eye, ear, …) get a second item flipped across the
- * face centre, matching the original GnomeCanvas behaviour.
- */
 class FacePartItem : public QObject
 {
     Q_OBJECT
@@ -26,18 +22,23 @@ public:
     ~FacePartItem() override;
 
     PartType type() const { return m_type; }
-
-    /** Sync graphics from the model data. */
     void updateFrom(const FacePart &part);
+    bool containsScenePos(const QPointF &scenePos) const;
+    void setSelected(bool selected);
+    bool isSelected() const { return m_selected; }
+    bool isVisible() const;
 
 private:
     void applyTransform(QGraphicsPixmapItem *item, const QPointF &offset,
                         qreal scale, qreal rotation, bool mirror);
+    void updateSelectionVisual();
 
     PartType m_type;
     QGraphicsScene *m_scene = nullptr;
     QGraphicsPixmapItem *m_primary = nullptr;
-    QGraphicsPixmapItem *m_mirror = nullptr; // only for mirrored types
+    QGraphicsPixmapItem *m_mirror = nullptr;
+    QGraphicsRectItem *m_selRect = nullptr;
+    bool m_selected = false;
 };
 
-#endif // FACEPARTITEM_H
+#endif

@@ -8,6 +8,15 @@ XML files. The repository currently ships ~100 face parts under `data/`.
 This tree is a **C++/Qt6 rewrite** of the original Ruby + GnomeCanvas
 program (still present in the history for reference).
 
+## Building with Nix
+
+```bash
+nix build
+nix run
+# or
+nix develop   # enters a shell with cmake + Qt6
+```
+
 ## Building (Linux)
 
 Requirements:

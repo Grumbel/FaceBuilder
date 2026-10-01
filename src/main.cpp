@@ -8,6 +8,34 @@
 #include <QDir>
 #include <QStandardPaths>
 
+static QString findDataRoot()
+{
+    const QByteArray envData = qgetenv("FACEBUILDER_DATA");
+    if (!envData.isEmpty())
+        return QString::fromLocal8Bit(envData);
+
+    const QDir appDir(QCoreApplication::applicationDirPath());
+
+    // Dev tree: build/ next to source, or run from source root
+    if (appDir.exists(QStringLiteral("../data")))
+        return appDir.absoluteFilePath(QStringLiteral("../data"));
+    if (appDir.exists(QStringLiteral("data")))
+        return appDir.absoluteFilePath(QStringLiteral("data"));
+
+    // Installed: share/facebuilder/data relative to bin/
+    if (appDir.exists(QStringLiteral("../share/facebuilder/data")))
+        return appDir.absoluteFilePath(QStringLiteral("../share/facebuilder/data"));
+
+    const QString located = QStandardPaths::locate(
+        QStandardPaths::GenericDataLocation,
+        QStringLiteral("facebuilder/data"),
+        QStandardPaths::LocateDirectory);
+    if (!located.isEmpty())
+        return located;
+
+    return {};
+}
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -15,24 +43,7 @@ int main(int argc, char *argv[])
     QApplication::setApplicationVersion(QStringLiteral("0.2.0"));
     QApplication::setOrganizationName(QStringLiteral("FaceBuilder"));
 
-    // Prefer data/ next to the executable (dev builds) or under share/.
-    QString dataRoot;
-    const QByteArray envData = qgetenv("FACEBUILDER_DATA");
-    if (!envData.isEmpty()) {
-        dataRoot = QString::fromLocal8Bit(envData);
-    } else {
-        const QDir appDir(QCoreApplication::applicationDirPath());
-        if (appDir.exists(QStringLiteral("../data")))
-            dataRoot = appDir.absoluteFilePath(QStringLiteral("../data"));
-        else if (appDir.exists(QStringLiteral("data")))
-            dataRoot = appDir.absoluteFilePath(QStringLiteral("data"));
-        else
-            dataRoot = QStandardPaths::locate(QStandardPaths::AppDataLocation,
-                                              QStringLiteral("data"),
-                                              QStandardPaths::LocateDirectory);
-    }
-
-    MainWindow window(dataRoot);
+    MainWindow window(findDataRoot());
     window.show();
     return app.exec();
 }

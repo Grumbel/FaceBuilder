@@ -25,6 +25,8 @@ add_executable(facebuilder
   src/partbrowser.cpp
   src/partbrowser.h
   src/parttypes.h
+  src/commands.cpp
+  src/commands.h
 )
 
 target_include_directories(facebuilder PRIVATE src)
@@ -34,5 +36,8 @@ target_link_libraries(facebuilder PRIVATE
   Qt6::Svg
 )
 
-install(TARGETS facebuilder RUNTIME DESTINATION bin)
-install(DIRECTORY data/ DESTINATION share/facebuilder/data)
+include(GNUInstallDirs)
+
+install(TARGETS facebuilder RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY data/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/data)
+install(DIRECTORY resources/icons/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/icons)
