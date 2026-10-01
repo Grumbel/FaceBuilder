@@ -1,43 +1,47 @@
-FaceBuilder
-===========
+# FaceBuilder
 
-FaceBuilder is a little toy application that lets you construct faces
-by putting together eyes, nose, mouth, head, hair and some additional
-items. You can also move, scale and rotate each of those face-parts as
-you like. The results can be saved to XML files and it currently
-provides ~100 faceparts in total.
+FaceBuilder is a small toy application that lets you construct faces by
+putting together eyes, nose, mouth, head, hair and additional items.
+You can move, scale and rotate each face-part. Results can be saved to
+XML files. The repository currently ships ~100 face parts under `data/`.
 
+This tree is a **C++/Qt6 rewrite** of the original Ruby + GnomeCanvas
+program (still present in the history for reference).
 
-Running
--------
+## Building (Linux)
 
-> Getting this to run as of 2015 is a little hard, as Ubuntu no longer
-> ships the necesarry libraries.
+Requirements:
 
-You need Ruby and the Ruby bindings for Gtk and GnomeCanvas. Once you
-have those just run:
+- CMake ≥ 3.16
+- Qt 6 (Widgets, Svg)
+- A C++17 compiler
 
-    ruby ./facebuilder.rb
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
 
+Run (development):
 
-Controls
---------
+```bash
+# data/ is expected next to the source root
+FACEBUILDER_DATA=$PWD/data ./build/facebuilder
+```
 
-    PgUp, PgDown: scale facepart
-    Home, End:    rotate facepart
-    Cursorkeys:   move facepart
+Or from the build directory when the source tree layout is preserved:
 
-The face parts itself can be selected via the GUI
+```bash
+./build/facebuilder
+```
 
+## Controls (planned parity with the original)
 
-Customizations
---------------
+```
+PgUp, PgDown: scale facepart
+Home, End:    rotate facepart
+Cursor keys:  move facepart
+```
 
-If you want to customize this programm just add new face parts to
-`data/$FACEPART/`, the programm should be able to find them
-automatically then.
+## License
 
-Screenshots
------------
-
-![Screenshot](images/screenshot-0.1.0-1.png)
+GPLv3+ (see COPYING). Original author: Ingo Ruhnke <grumbel@gmail.com>.
