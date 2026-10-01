@@ -2,9 +2,11 @@
 
 ## Base
 
-- Original tip / work-line base: `3a83ba979d9a3e63ccfcd88a36b7a6074a00889d` (`3a83ba9`)
+- Original work-line start: `3a83ba9`
+- Rebased onto upstream `e3f29e1` (Remove unused facebuilder-old.rb / clock.rb) on 2026-10-01
+- Effective base for new bundles after rebase: `e3f29e1ab6fca67513e2a38686d08ee3eca4ae99` (`e3f29e1`)
 - Current tip: (see git log)
-- Next bundle: `facebuilder-002.1-model-browser-3a83ba9.bundle`
+- Next bundle: `facebuilder-003.1-rebased-e3f29e1.bundle`
 
 ## Confirmed decisions (2026-10-01)
 
@@ -48,12 +50,9 @@ cmake --build build
 FACEBUILDER_DATA=$PWD/data ./build/facebuilder
 ```
 
-Pick a category on the right, click a thumbnail — the part appears on the canvas.
-Click the red X to clear that slot. File → New clears everything.
-
 ## Notes for next agent
 
-- Work tree from the tip bundle; base remains `3a83ba9`.
-- Old Ruby sources still present for reference.
-- Mirrored types: eye, ear, eyebrow, mouthfold (FacePartItem draws a second flipped item).
-- Transform order matches original Art::Affine chain.
+- Upstream moved past `3a83ba9`; rewrite commits were rebased onto `e3f29e1`.
+- Apply the tip bundle on top of `e3f29e1` (current origin/master).
+- Old Ruby sources still present for reference (clock.rb and facebuilder-old.rb were removed upstream).
+- M3 was started in a prior session but not committed; implement from TODO.
