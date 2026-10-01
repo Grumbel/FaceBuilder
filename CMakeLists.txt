@@ -52,6 +52,8 @@ install(DIRECTORY examples/ DESTINATION ${CMAKE_INSTALL_DATADIR}/facebuilder/exa
 
 install(FILES resources/facebuilder.desktop
         DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(DIRECTORY resources/icons/hicolor/
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor)
 install(FILES resources/icons/facebuilder.png
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
         RENAME facebuilder.png)
